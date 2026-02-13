@@ -10,7 +10,8 @@ uses
 	System.SysUtils,
 	System.Classes,
 	System.IniFiles,
-	System.IOUtils;
+	System.IOUtils,
+	MockServerManager;
 
 type
 	{Configuration record for integration test settings}
@@ -47,7 +48,6 @@ type
 
 		{Mock server settings}
 		FTuchaPath: WideString;
-		FTuchaConfigPath: WideString;
 
 		class var FInstance: TIntegrationTestConfig;
 		class var FConfigLoaded: Boolean;
@@ -100,7 +100,6 @@ type
 		property SecondaryServerUrl: WideString read FSecondaryServerUrl;
 
 		property TuchaPath: WideString read FTuchaPath;
-		property TuchaConfigPath: WideString read FTuchaConfigPath;
 
 		{Check if secondary account is configured}
 		function HasSecondaryAccount: Boolean;
@@ -214,14 +213,33 @@ begin
 
 		{Mock server}
 		FInstance.FTuchaPath := IniFile.ReadString('MockServer', 'TuchaPath', '');
-		FInstance.FTuchaConfigPath := IniFile.ReadString('MockServer', 'TuchaConfigPath', '');
+
+		{When mock server is configured, auto-fill defaults for fields left empty.
+			This allows minimal INI: just Enabled=true and TuchaPath=<path>.}
+		if FInstance.HasMockServer then
+		begin
+			if FInstance.FServerUrl = '' then
+				FInstance.FServerUrl := DEFAULT_MOCK_SERVER_URL;
+			if FInstance.FSecondaryServerUrl = '' then
+				FInstance.FSecondaryServerUrl := DEFAULT_MOCK_SERVER_URL;
+			if FInstance.FPrimaryEmail = '' then
+				FInstance.FPrimaryEmail := DEFAULT_MOCK_PRIMARY_EMAIL;
+			if FInstance.FPrimaryPassword = '' then
+				FInstance.FPrimaryPassword := DEFAULT_MOCK_PRIMARY_PASSWORD;
+			FInstance.FPrimaryUseAppPassword := True;
+			if FInstance.FSecondaryEmail = '' then
+				FInstance.FSecondaryEmail := DEFAULT_MOCK_SECONDARY_EMAIL;
+			if FInstance.FSecondaryPassword = '' then
+				FInstance.FSecondaryPassword := DEFAULT_MOCK_SECONDARY_PASSWORD;
+			FInstance.FSecondaryUseAppPassword := True;
+		end;
 
 		FConfigValid := FInstance.Validate;
 
 		if not FInstance.FEnabled then
 			FSkipReason := 'Integration tests disabled in config (Enabled=false)'
 		else if not FConfigValid then
-			FSkipReason := 'Invalid config: primary account credentials missing';
+			FSkipReason := 'Invalid config: primary account credentials required (set manually or via TuchaPath for mock server)';
 	finally
 		IniFile.Free;
 	end;

@@ -173,8 +173,7 @@ begin
 	{Start mock server if configured -- must happen before any cloud operations}
 	if FConfig.HasMockServer then
 	begin
-		FMockServer := TMockServerManager.Create(
-			FConfig.TuchaPath, FConfig.TuchaConfigPath, FConfig.ServerUrl);
+		FMockServer := TMockServerManager.Create(FConfig.TuchaPath, FConfig.ServerUrl);
 		FMockServer.Start;
 
 		{Create required test accounts}

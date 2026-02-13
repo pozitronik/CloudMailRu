@@ -1,23 +1,27 @@
 unit MockServerManager;
 
 {Manages the tucha mock server lifecycle for integration tests.
-	Starts/stops the server process and creates test accounts via CLI.
-	When TuchaPath is configured, tests become fully self-contained:
-	no manual server start or account setup needed.}
+	Given only a path to tucha.exe, this class handles everything:
+	generates server config, starts/stops the process, provisions accounts.
+	Uses a fixed work directory next to the test executable so that
+	PID files persist across runs and stale servers can be stopped.}
 
 interface
 
 uses
 	System.SysUtils,
-	System.Classes;
+	System.Classes,
+	Winapi.Windows;
 
 type
-	{Manages tucha mock server: start, stop, and account provisioning}
+	{Manages tucha mock server: config generation, start, stop, account provisioning}
 	TMockServerManager = class
 	private
 		FTuchaPath: WideString;
-		FTuchaConfigPath: WideString;
 		FServerUrl: WideString;
+		FServerPort: Integer;
+		FWorkDir: WideString;
+		FConfigPath: WideString;
 		FStarted: Boolean;
 
 		{Execute tucha CLI command and wait for completion.
@@ -27,22 +31,36 @@ type
 			@raises Exception if execution fails or exit code is unexpected}
 		function ExecuteTucha(const Args: WideString; const AllowedExitCodes: array of DWORD): DWORD;
 
-		{Poll the server URL until it responds or timeout expires.
+		{Poll the server until it responds or timeout expires.
 			@param TimeoutMs Maximum wait time in milliseconds
 			@return True if server became available within timeout}
 		function WaitForServer(TimeoutMs: Integer = 10000): Boolean;
+
+		{Create the work directory and write config.yaml for tucha}
+		procedure GenerateConfig;
+
+		{Extract port number from a URL like http://localhost:9090.
+			@return Port number, or DEFAULT_MOCK_PORT if parsing fails}
+		function ExtractPort(const Url: WideString): Integer;
+
+		{Convert a Windows path to forward slashes for YAML compatibility}
+		function ToYamlPath(const Path: WideString): WideString;
 	public
 		{@param TuchaPath Full path to tucha.exe
-			@param ConfigPath Full path to tucha config.yaml
-			@param ServerUrl Base URL the server will listen on (for health polling)}
-		constructor Create(const TuchaPath, ConfigPath, ServerUrl: WideString);
+			@param ServerUrl Server URL (determines listen port and external URL)}
+		constructor Create(const TuchaPath, ServerUrl: WideString);
 		destructor Destroy; override;
 
-		{Start the mock server in background mode}
+		{Start the mock server in background mode.
+			Generates config, stops any stale instance, starts fresh.}
 		procedure Start;
 
 		{Stop the mock server}
 		procedure Stop;
+
+		{Delete the mock server data directory for a clean slate.
+			Call before Start to ensure no leftover state from previous runs.}
+		procedure CleanData;
 
 		{Create a user account on the mock server.
 			@param Email User email address
@@ -57,20 +75,30 @@ type
 		property Started: Boolean read FStarted;
 	end;
 
+const
+	DEFAULT_MOCK_PORT = 9090;
+	DEFAULT_MOCK_SERVER_URL = 'http://localhost:9090';
+	DEFAULT_MOCK_PRIMARY_EMAIL = 'primary@test.local';
+	DEFAULT_MOCK_PRIMARY_PASSWORD = 'test123';
+	DEFAULT_MOCK_SECONDARY_EMAIL = 'secondary@test.local';
+	DEFAULT_MOCK_SECONDARY_PASSWORD = 'test123';
+	MOCK_WORK_DIR_NAME = 'tucha_testdata';
+
 implementation
 
 uses
-	Winapi.Windows,
-	Winapi.ShellAPI;
+	System.IOUtils;
 
 {TMockServerManager}
 
-constructor TMockServerManager.Create(const TuchaPath, ConfigPath, ServerUrl: WideString);
+constructor TMockServerManager.Create(const TuchaPath, ServerUrl: WideString);
 begin
 	inherited Create;
 	FTuchaPath := TuchaPath;
-	FTuchaConfigPath := ConfigPath;
 	FServerUrl := ServerUrl;
+	FServerPort := ExtractPort(ServerUrl);
+	FWorkDir := TPath.Combine(ExtractFilePath(ParamStr(0)), MOCK_WORK_DIR_NAME);
+	FConfigPath := TPath.Combine(FWorkDir, 'config.yaml');
 	FStarted := False;
 end;
 
@@ -81,6 +109,64 @@ begin
 	inherited;
 end;
 
+function TMockServerManager.ExtractPort(const Url: WideString): Integer;
+var
+	LastColon: Integer;
+	PortStr: string;
+begin
+	{Find the rightmost colon -- in http://host:port it precedes the port}
+	LastColon := LastDelimiter(':', String(Url));
+	if LastColon > 0 then
+	begin
+		PortStr := Copy(String(Url), LastColon + 1);
+		{Strip trailing slash or path}
+		PortStr := Trim(PortStr.TrimRight(['/']));
+		if TryStrToInt(PortStr, Result) and (Result > 0) then
+			Exit;
+	end;
+	Result := DEFAULT_MOCK_PORT;
+end;
+
+function TMockServerManager.ToYamlPath(const Path: WideString): WideString;
+begin
+	Result := StringReplace(Path, '\', '/', [rfReplaceAll]);
+end;
+
+procedure TMockServerManager.GenerateConfig;
+var
+	DataDir, ConfigContent: WideString;
+begin
+	{Ensure work directory exists}
+	if not TDirectory.Exists(FWorkDir) then
+		TDirectory.CreateDirectory(FWorkDir);
+
+	DataDir := TPath.Combine(FWorkDir, 'data');
+	if not TDirectory.Exists(DataDir) then
+		TDirectory.CreateDirectory(DataDir);
+
+	ConfigContent :=
+		'server:' + sLineBreak +
+		'  host: "0.0.0.0"' + sLineBreak +
+		'  port: ' + IntToStr(FServerPort) + sLineBreak +
+		'  external_url: "' + String(FServerUrl) + '"' + sLineBreak +
+		'' + sLineBreak +
+		'admin:' + sLineBreak +
+		'  login: "admin"' + sLineBreak +
+		'  password: "admin"' + sLineBreak +
+		'' + sLineBreak +
+		'storage:' + sLineBreak +
+		'  db_path: "' + String(ToYamlPath(TPath.Combine(DataDir, 'tucha.db'))) + '"' + sLineBreak +
+		'  content_dir: "' + String(ToYamlPath(TPath.Combine(DataDir, 'storage'))) + '"' + sLineBreak +
+		'  quota_bytes: 17179869184' + sLineBreak +  {16 GiB}
+		'' + sLineBreak +
+		'logging:' + sLineBreak +
+		'  level: "info"' + sLineBreak +
+		'  output: "stdout"' + sLineBreak;
+
+	TFile.WriteAllText(FConfigPath, ConfigContent, TEncoding.UTF8);
+	WriteLn('[MockServer] Generated config: ' + FConfigPath);
+end;
+
 function TMockServerManager.ExecuteTucha(const Args: WideString; const AllowedExitCodes: array of DWORD): DWORD;
 var
 	SI: TStartupInfoW;
@@ -89,10 +175,7 @@ var
 	WaitResult: DWORD;
 	I: Integer;
 begin
-	CmdLine := '"' + FTuchaPath + '"';
-	if FTuchaConfigPath <> '' then
-		CmdLine := CmdLine + ' -config "' + FTuchaConfigPath + '"';
-	CmdLine := CmdLine + ' ' + Args;
+	CmdLine := '"' + FTuchaPath + '" -config "' + FConfigPath + '" ' + Args;
 
 	FillChar(SI, SizeOf(SI), 0);
 	SI.cb := SizeOf(SI);
@@ -140,15 +223,11 @@ begin
 	Result := False;
 	StartTime := GetTickCount;
 
-	{Poll by trying to connect to the server URL.
-		Use a simple HTTP GET via tucha's health or config endpoint.
-		Since we can't easily do HTTP here without pulling in dependencies,
-		we rely on a brief sleep after --background returns --
-		tucha's --background flag only returns after the server is listening.}
+	{--background already waits until the server is listening,
+		so this is a safety net. Poll with --status (exit code 0 = running).}
 	Sleep(500);
 	Elapsed := GetTickCount - StartTime;
 
-	{Poll with --status which returns exit code 0 when running, 4 when not}
 	while Elapsed < Cardinal(TimeoutMs) do
 	begin
 		try
@@ -156,7 +235,6 @@ begin
 			Result := True;
 			Exit;
 		except
-			{Server not ready yet, retry}
 			Sleep(500);
 			Elapsed := GetTickCount - StartTime;
 		end;
@@ -166,6 +244,7 @@ end;
 procedure TMockServerManager.Start;
 const
 	EXIT_ALREADY_RUNNING = 3;
+	EXIT_NOT_RUNNING = 4;
 var
 	ExitCode: DWORD;
 begin
@@ -173,6 +252,21 @@ begin
 		Exit;
 
 	WriteLn('[MockServer] Starting tucha: ' + FTuchaPath);
+
+	{Stop any stale instance from a previous run.
+		GenerateConfig writes the same config path every time, so any leftover
+		PID file from a previous run points to the right process.}
+	GenerateConfig;
+	try
+		ExecuteTucha('--stop', [EXIT_NOT_RUNNING]);
+	except
+		on E: Exception do
+			WriteLn('[MockServer] Note: pre-start stop attempt: ' + E.Message);
+	end;
+
+	{Clean data and regenerate config so data directories exist for tucha}
+	CleanData;
+	GenerateConfig;
 
 	{--background starts the server and returns once it is listening.
 		Exit code 3 means already running -- treat as success.}
@@ -196,7 +290,6 @@ begin
 
 	WriteLn('[MockServer] Stopping tucha...');
 	try
-		{Exit code 4 means not running -- harmless during teardown}
 		ExecuteTucha('--stop', [EXIT_NOT_RUNNING]);
 	except
 		on E: Exception do
@@ -204,6 +297,18 @@ begin
 	end;
 	FStarted := False;
 	WriteLn('[MockServer] Server stopped');
+end;
+
+procedure TMockServerManager.CleanData;
+var
+	DataDir: WideString;
+begin
+	DataDir := TPath.Combine(FWorkDir, 'data');
+	if TDirectory.Exists(DataDir) then
+	begin
+		TDirectory.Delete(DataDir, True);
+		WriteLn('[MockServer] Cleaned data directory');
+	end;
 end;
 
 procedure TMockServerManager.CreateUser(const Email, Password: WideString; const Quota: WideString);

@@ -13,6 +13,12 @@
 ; Master switch to enable/disable integration tests
 Enabled=false
 
+[MockServer]
+; Path to tucha mock server executable
+; When set, tests automatically start/stop the server and create accounts
+; Leave empty to use a manually started server
+TuchaPath=
+
 ; Cloud folder where all test artifacts will be created
 ; Tests create a unique subfolder (Run_YYYYMMDD_HHMMSS) for each run
 TestFolder=/IntegrationTests
@@ -70,10 +76,3 @@ ServerUrl=
 ; Leave empty to use the primary server URL
 ; When both are empty, defaults to cloud.mail.ru
 ServerUrl=
-
-[MockServer]
-; Path to tucha mock server executable
-; When set, tests automatically start/stop the server and create accounts
-; Leave empty to use a manually started server
-TuchaPath=
-TuchaConfigPath=
