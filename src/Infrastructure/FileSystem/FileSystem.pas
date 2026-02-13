@@ -615,16 +615,13 @@ function TWindowsFileSystem.GetFileModTime(const Path: WideString): Int64;
 var
 	FileData: TWin32FileAttributeData;
 	SystemTime: TSystemTime;
-	LocalFileTime: TFileTime;
 begin
 	Result := 0;
 	if not GetFileAttributesExW(PWideChar(GetUNCFilePath(Path)), GetFileExInfoStandard, @FileData) then
 		Exit;
 
-	{Convert FILETIME -> local -> SystemTime -> Unix timestamp}
-	if not FileTimeToLocalFileTime(FileData.ftLastWriteTime, LocalFileTime) then
-		Exit;
-	if not FileTimeToSystemTime(LocalFileTime, SystemTime) then
+	{Convert UTC FILETIME directly to SystemTime, keeping UTC throughout}
+	if not FileTimeToSystemTime(FileData.ftLastWriteTime, SystemTime) then
 		Exit;
 
 	Result := DateTimeToUnix(EncodeDate(SystemTime.wYear, SystemTime.wMonth, SystemTime.wDay) +

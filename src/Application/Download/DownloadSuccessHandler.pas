@@ -109,7 +109,7 @@ end;
 procedure TDownloadSuccessHandler.PreserveFileTime(const LocalName: WideString; UnixTime: Int64);
 begin
 	if UnixTime <> 0 then
-		FFileSystem.SetFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(UnixTime)));
+		FFileSystem.SetFileTime(ExpandUNCFileName(LocalName), DateTimeToFileTime(UnixToDateTime(UnixTime, False)));
 end;
 
 procedure TDownloadSuccessHandler.HandleMoveOperation(const Context: TDownloadContext);

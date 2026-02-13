@@ -106,7 +106,7 @@ var
 begin
 	FileTime.dwHighDateTime := 0;
 	FileTime.dwLowDateTime := 0;
-	FileTime := DateTimeToFileTime(UnixToDateTime(UnixTimestamp));
+	FileTime := DateTimeToFileTime(UnixToDateTime(UnixTimestamp, False));
 	Move(FileTime, FieldValue^, SizeOf(FileTime));
 	Result := ft_datetime;
 end;
