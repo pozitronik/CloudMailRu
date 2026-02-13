@@ -43,6 +43,10 @@ type
 		ThumbnailExtensions: WideString;
 		Language: WideString; {Selected translation name, empty = English default}
 		FileHistoryEnabled: boolean; {Show version history tab in file properties dialog}
+		ShowDescriptionFiles: boolean; {Show descript.ion in cloud directory listings}
+		ShowTimestampFiles: boolean; {Show .cloud_timestamps in cloud directory listings}
+		CopyDescriptionFiles: boolean; {Allow downloading descript.ion files}
+		CopyTimestampFiles: boolean; {Allow downloading .cloud_timestamps files}
 	private
 		FIniFilePath: WideString;
 		FAccountsIniFilePath: WideString;

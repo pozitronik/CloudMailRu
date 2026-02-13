@@ -185,6 +185,8 @@ type
     DescriptionCopyFromCloudCB: TCheckBox;
     DescriptionFileNameEdit: TEdit;
     DescriptionTrackCloudFSCB: TCheckBox;
+    ShowDescriptionFilesCB: TCheckBox;
+    CopyDescriptionFilesCB: TCheckBox;
     FileTimestampsCB: TGroupBox;
     TimestampModeLabel: TLabel;
     TimestampModeCB: TComboBox;
@@ -192,6 +194,8 @@ type
     TimestampFileNameEdit: TEdit;
     TimestampConflictModeLabel: TLabel;
     TimestampConflictModeCB: TComboBox;
+    ShowTimestampFilesCB: TCheckBox;
+    CopyTimestampFilesCB: TCheckBox;
     FileHistoryCB: TCheckBox;
     CloudMaxFileSizeValue: TEdit;
     CloudMaxFileSizeLabelBytes: TLabel;
@@ -324,6 +328,10 @@ type
 		function GetDescriptionCopyFromCloud: Boolean;
 		procedure SetDescriptionTrackCloudFS(Value: Boolean);
 		function GetDescriptionTrackCloudFS: Boolean;
+		procedure SetShowDescriptionFiles(Value: Boolean);
+		function GetShowDescriptionFiles: Boolean;
+		procedure SetCopyDescriptionFiles(Value: Boolean);
+		function GetCopyDescriptionFiles: Boolean;
 		procedure SetDescriptionFileName(Value: WideString);
 		function GetDescriptionFileName: WideString;
 
@@ -334,6 +342,10 @@ type
 		function GetTimestampFileName: WideString;
 		procedure SetTimestampConflictMode(Value: Integer);
 		function GetTimestampConflictMode: Integer;
+		procedure SetShowTimestampFiles(Value: Boolean);
+		function GetShowTimestampFiles: Boolean;
+		procedure SetCopyTimestampFiles(Value: Boolean);
+		function GetCopyTimestampFiles: Boolean;
 
 		{IAccountsView - File history settings}
 		procedure SetFileHistoryEnabled(Value: Boolean);
@@ -855,6 +867,26 @@ begin
 	Result := DescriptionTrackCloudFSCB.Checked;
 end;
 
+procedure TAccountsForm.SetShowDescriptionFiles(Value: Boolean);
+begin
+	ShowDescriptionFilesCB.Checked := Value;
+end;
+
+function TAccountsForm.GetShowDescriptionFiles: Boolean;
+begin
+	Result := ShowDescriptionFilesCB.Checked;
+end;
+
+procedure TAccountsForm.SetCopyDescriptionFiles(Value: Boolean);
+begin
+	CopyDescriptionFilesCB.Checked := Value;
+end;
+
+function TAccountsForm.GetCopyDescriptionFiles: Boolean;
+begin
+	Result := CopyDescriptionFilesCB.Checked;
+end;
+
 procedure TAccountsForm.SetDescriptionFileName(Value: WideString);
 begin
 	DescriptionFileNameEdit.Text := Value;
@@ -896,6 +928,26 @@ end;
 function TAccountsForm.GetTimestampConflictMode: Integer;
 begin
 	Result := TimestampConflictModeCB.ItemIndex;
+end;
+
+procedure TAccountsForm.SetShowTimestampFiles(Value: Boolean);
+begin
+	ShowTimestampFilesCB.Checked := Value;
+end;
+
+function TAccountsForm.GetShowTimestampFiles: Boolean;
+begin
+	Result := ShowTimestampFilesCB.Checked;
+end;
+
+procedure TAccountsForm.SetCopyTimestampFiles(Value: Boolean);
+begin
+	CopyTimestampFilesCB.Checked := Value;
+end;
+
+function TAccountsForm.GetCopyTimestampFiles: Boolean;
+begin
+	Result := CopyTimestampFilesCB.Checked;
 end;
 
 {IAccountsView - File history settings}
@@ -1974,6 +2026,8 @@ begin
 	DescriptionCopyToCloudCB.Caption := DFM_CB_DESC_COPY_TO;
 	DescriptionCopyFromCloudCB.Caption := DFM_CB_DESC_COPY_FROM;
 	DescriptionTrackCloudFSCB.Caption := DFM_CB_DESC_TRACK;
+	ShowDescriptionFilesCB.Caption := DFM_CB_SHOW_DESC_FILES;
+	CopyDescriptionFilesCB.Caption := DFM_CB_COPY_DESC_FILES;
 
 	{Metadata tab - File timestamps groupbox}
 	FileTimestampsCB.Caption := DFM_GB_FILE_TIMESTAMPS;
@@ -1982,6 +2036,8 @@ begin
 	TimestampFileNameLabel.Caption := DFM_LBL_TS_FILENAME;
 	TimestampConflictModeLabel.Caption := DFM_LBL_TS_CONFLICT;
 	RepopulateCombo(TimestampConflictModeCB, [DFM_OPT_TS_USE_STORED, DFM_OPT_TS_USE_SERVER]);
+	ShowTimestampFilesCB.Caption := DFM_CB_SHOW_TS_FILES;
+	CopyTimestampFilesCB.Caption := DFM_CB_COPY_TS_FILES;
 
 	{Streaming tab}
 	ExtLabel.Caption := DFM_LBL_FILE_EXT;

@@ -187,6 +187,8 @@ type
 			Auto mode tries IndySec first (for OpenSSL 3.x support), falls back to standard Indy.}
 		function CreateSSLHandlerFactory(SSLBackend: Integer): ISSLHandlerFactory;
 		procedure LoadTranslationOnStartup;
+		{Removes metadata files from listing based on ShowDescriptionFiles/ShowTimestampFiles settings}
+		procedure FilterHiddenMetadataFiles(var Listing: TCloudDirItemList);
 	protected
 		{Ensures cloud is authorized. Returns True if authorized, False otherwise.
 			Attempts authorization if not yet authorized. Sets LastError on failure.}
@@ -269,6 +271,21 @@ begin
 	end;
 end;
 
+procedure TWFXApplication.FilterHiddenMetadataFiles(var Listing: TCloudDirItemList);
+var
+	Settings: TPluginSettings;
+	I: Integer;
+begin
+	Settings := SettingsManager.GetSettings;
+	for I := High(Listing) downto 0 do
+	begin
+		if (not Settings.ShowDescriptionFiles) and SameText(Listing[I].name, Settings.DescriptionFileName) then
+			Delete(Listing, I, 1)
+		else if (not Settings.ShowTimestampFiles) and SameText(Listing[I].name, Settings.TimestampFileName) then
+			Delete(Listing, I, 1);
+	end;
+end;
+
 procedure TWFXApplication.LoadTranslationOnStartup;
 var
 	Manager: TTranslationManager;
@@ -327,7 +344,7 @@ begin
 		begin
 			Result := FileExists(Path);
 		end);
-	FDownloadPreparationValidator := TDownloadPreparationValidator.Create;
+	FDownloadPreparationValidator := TDownloadPreparationValidator.Create(SettingsManager);
 	FContentFieldProvider := TContentFieldProvider.Create;
 	FIconProvider := TIconProvider.Create;
 	FOperationLifecycle := TOperationLifecycleHandler.Create;
@@ -882,6 +899,7 @@ begin
 	end else begin {Regular path listing}
 		PathResult := FPathListingHandler.Execute(GlobalPath);
 		CurrentListing := PathResult.Listing;
+		FilterHiddenMetadataFiles(CurrentListing);
 		CurrentIncomingInvitesListing := PathResult.IncomingInvites;
 
 		{Apply common result fields}

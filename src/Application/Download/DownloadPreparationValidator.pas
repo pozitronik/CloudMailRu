@@ -5,6 +5,7 @@ unit DownloadPreparationValidator;
 	Centralizes initial validation logic:
 	- Resume flag check (not supported by cloud API)
 	- Virtual path rejection (can't download from trash/shared/invites)
+	- Metadata file skip (descript.ion, .cloud_timestamps based on settings)
 
 	Note: Local file conflict resolution is handled separately by
 	ILocalFileConflictResolver which is already extracted.}
@@ -12,7 +13,8 @@ unit DownloadPreparationValidator;
 interface
 
 uses
-	RealPath;
+	RealPath,
+	PluginSettingsManager;
 
 type
 	TDownloadValidationResult = record
@@ -31,16 +33,30 @@ type
 	end;
 
 	TDownloadPreparationValidator = class(TInterfacedObject, IDownloadPreparationValidator)
+	private
+		FSettingsManager: IPluginSettingsManager;
 	public
+		constructor Create(SettingsManager: IPluginSettingsManager);
 		function Validate(const RemotePath: TRealPath; CopyFlags: Integer): TDownloadValidationResult;
 	end;
 
 implementation
 
 uses
+	SysUtils,
+	PluginSettings,
 	WFXTypes;
 
+constructor TDownloadPreparationValidator.Create(SettingsManager: IPluginSettingsManager);
+begin
+	inherited Create;
+	FSettingsManager := SettingsManager;
+end;
+
 function TDownloadPreparationValidator.Validate(const RemotePath: TRealPath; CopyFlags: Integer): TDownloadValidationResult;
+var
+	Settings: TPluginSettings;
+	FileName: WideString;
 begin
 	Result.ShouldProceed := False;
 	Result.ResultCode := FS_FILE_NOTSUPPORTED;
@@ -52,6 +68,20 @@ begin
 	{Can't download from virtual directories}
 	if RemotePath.isVirtual then
 		Exit;
+
+	{Skip metadata files when copy is disabled -- silent skip via FS_FILE_OK}
+	Settings := FSettingsManager.GetSettings;
+	FileName := ExtractFileName(RemotePath.Path);
+	if (not Settings.CopyDescriptionFiles) and SameText(FileName, Settings.DescriptionFileName) then
+	begin
+		Result.ResultCode := FS_FILE_OK;
+		Exit;
+	end;
+	if (not Settings.CopyTimestampFiles) and SameText(FileName, Settings.TimestampFileName) then
+	begin
+		Result.ResultCode := FS_FILE_OK;
+		Exit;
+	end;
 
 	Result.ShouldProceed := True;
 	Result.ResultCode := FS_FILE_OK;

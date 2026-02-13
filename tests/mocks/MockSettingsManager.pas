@@ -44,6 +44,10 @@ type
 		procedure SetCheckCRC(Value: Boolean);
 		procedure SetDeleteMode(Mode: Integer);
 		procedure SetLogUserSpace(Value: Boolean);
+		procedure SetShowDescriptionFiles(Value: Boolean);
+		procedure SetShowTimestampFiles(Value: Boolean);
+		procedure SetCopyDescriptionFiles(Value: Boolean);
+		procedure SetCopyTimestampFiles(Value: Boolean);
 
 		{Observable state}
 		property SaveCalled: Boolean read FSaveCalled;
@@ -159,6 +163,26 @@ end;
 procedure TMockSettingsManager.SetLogUserSpace(Value: Boolean);
 begin
 	FSettings.LogUserSpace := Value;
+end;
+
+procedure TMockSettingsManager.SetShowDescriptionFiles(Value: Boolean);
+begin
+	FSettings.ShowDescriptionFiles := Value;
+end;
+
+procedure TMockSettingsManager.SetShowTimestampFiles(Value: Boolean);
+begin
+	FSettings.ShowTimestampFiles := Value;
+end;
+
+procedure TMockSettingsManager.SetCopyDescriptionFiles(Value: Boolean);
+begin
+	FSettings.CopyDescriptionFiles := Value;
+end;
+
+procedure TMockSettingsManager.SetCopyTimestampFiles(Value: Boolean);
+begin
+	FSettings.CopyTimestampFiles := Value;
 end;
 
 end.

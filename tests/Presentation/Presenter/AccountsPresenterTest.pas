@@ -72,10 +72,18 @@ type
 		FDescriptionTrackCloudFS: Boolean;
 		FDescriptionFileName: WideString;
 
+		{Description visibility settings}
+		FShowDescriptionFiles: Boolean;
+		FCopyDescriptionFiles: Boolean;
+
 		{Timestamp settings}
 		FTimestampMode: Integer;
 		FTimestampFileName: WideString;
 		FTimestampConflictMode: Integer;
+
+		{Timestamp visibility settings}
+		FShowTimestampFiles: Boolean;
+		FCopyTimestampFiles: Boolean;
 
 		{File history settings}
 		FFileHistoryEnabled: Boolean;
@@ -246,6 +254,10 @@ type
 		function GetDescriptionCopyFromCloud: Boolean;
 		procedure SetDescriptionTrackCloudFS(Value: Boolean);
 		function GetDescriptionTrackCloudFS: Boolean;
+		procedure SetShowDescriptionFiles(Value: Boolean);
+		function GetShowDescriptionFiles: Boolean;
+		procedure SetCopyDescriptionFiles(Value: Boolean);
+		function GetCopyDescriptionFiles: Boolean;
 		procedure SetDescriptionFileName(Value: WideString);
 		function GetDescriptionFileName: WideString;
 
@@ -256,6 +268,10 @@ type
 		function GetTimestampFileName: WideString;
 		procedure SetTimestampConflictMode(Value: Integer);
 		function GetTimestampConflictMode: Integer;
+		procedure SetShowTimestampFiles(Value: Boolean);
+		function GetShowTimestampFiles: Boolean;
+		procedure SetCopyTimestampFiles(Value: Boolean);
+		function GetCopyTimestampFiles: Boolean;
 
 		{IAccountsView - File history settings}
 		procedure SetFileHistoryEnabled(Value: Boolean);
@@ -1151,6 +1167,26 @@ begin
 	Result := FDescriptionTrackCloudFS;
 end;
 
+procedure TMockAccountsView.SetShowDescriptionFiles(Value: Boolean);
+begin
+	FShowDescriptionFiles := Value;
+end;
+
+function TMockAccountsView.GetShowDescriptionFiles: Boolean;
+begin
+	Result := FShowDescriptionFiles;
+end;
+
+procedure TMockAccountsView.SetCopyDescriptionFiles(Value: Boolean);
+begin
+	FCopyDescriptionFiles := Value;
+end;
+
+function TMockAccountsView.GetCopyDescriptionFiles: Boolean;
+begin
+	Result := FCopyDescriptionFiles;
+end;
+
 procedure TMockAccountsView.SetDescriptionFileName(Value: WideString);
 begin
 	FDescriptionFileName := Value;
@@ -1191,6 +1227,26 @@ end;
 function TMockAccountsView.GetTimestampConflictMode: Integer;
 begin
 	Result := FTimestampConflictMode;
+end;
+
+procedure TMockAccountsView.SetShowTimestampFiles(Value: Boolean);
+begin
+	FShowTimestampFiles := Value;
+end;
+
+function TMockAccountsView.GetShowTimestampFiles: Boolean;
+begin
+	Result := FShowTimestampFiles;
+end;
+
+procedure TMockAccountsView.SetCopyTimestampFiles(Value: Boolean);
+begin
+	FCopyTimestampFiles := Value;
+end;
+
+function TMockAccountsView.GetCopyTimestampFiles: Boolean;
+begin
+	Result := FCopyTimestampFiles;
 end;
 
 {File history settings}
@@ -2025,6 +2081,10 @@ begin
 	FView.SetTimestampMode(2);
 	FView.SetTimestampFileName('.my_timestamps');
 	FView.SetTimestampConflictMode(1);
+	FView.SetShowTimestampFiles(True);
+	FView.SetCopyTimestampFiles(True);
+	FView.SetShowDescriptionFiles(True);
+	FView.SetCopyDescriptionFiles(True);
 	FView.SetFileHistoryEnabled(True);
 
 	FPresenter.OnApplyGlobalSettingsClick;
@@ -2038,9 +2098,13 @@ begin
 	Assert.AreEqual(2, Settings.SSLBackend, 'SSLBackend should be saved');
 	Assert.IsTrue(Settings.DescriptionEnabled, 'DescriptionEnabled should be saved');
 	Assert.AreEqual('descript.ion', Settings.DescriptionFileName, 'DescriptionFileName should be saved');
+	Assert.IsTrue(Settings.ShowDescriptionFiles, 'ShowDescriptionFiles should be saved');
+	Assert.IsTrue(Settings.CopyDescriptionFiles, 'CopyDescriptionFiles should be saved');
 	Assert.AreEqual(2, Settings.TimestampMode, 'TimestampMode should be saved');
 	Assert.AreEqual('.my_timestamps', Settings.TimestampFileName, 'TimestampFileName should be saved');
 	Assert.AreEqual(1, Settings.TimestampConflictMode, 'TimestampConflictMode should be saved');
+	Assert.IsTrue(Settings.ShowTimestampFiles, 'ShowTimestampFiles should be saved');
+	Assert.IsTrue(Settings.CopyTimestampFiles, 'CopyTimestampFiles should be saved');
 	Assert.IsTrue(Settings.FileHistoryEnabled, 'FileHistoryEnabled should be saved');
 end;
 
@@ -3226,6 +3290,10 @@ begin
 	Settings.TimestampMode := 2;
 	Settings.TimestampFileName := '.my_timestamps';
 	Settings.TimestampConflictMode := 1;
+	Settings.ShowTimestampFiles := True;
+	Settings.CopyTimestampFiles := True;
+	Settings.ShowDescriptionFiles := True;
+	Settings.CopyDescriptionFiles := True;
 	Settings.FileHistoryEnabled := True;
 	FSettingsManager.SetSettings(Settings);
 
@@ -3246,9 +3314,13 @@ begin
 	Assert.IsTrue(FView.GetDescriptionEnabled, 'DescriptionEnabled should be loaded');
 	Assert.IsTrue(FView.GetDescriptionCopyToCloud, 'DescriptionCopyToCloud should be loaded');
 	Assert.IsTrue(FView.GetDescriptionCopyFromCloud, 'DescriptionCopyFromCloud should be loaded');
+	Assert.IsTrue(FView.GetShowDescriptionFiles, 'ShowDescriptionFiles should be loaded');
+	Assert.IsTrue(FView.GetCopyDescriptionFiles, 'CopyDescriptionFiles should be loaded');
 	Assert.AreEqual(2, FView.GetTimestampMode, 'TimestampMode should be loaded');
 	Assert.AreEqual('.my_timestamps', FView.GetTimestampFileName, 'TimestampFileName should be loaded');
 	Assert.AreEqual(1, FView.GetTimestampConflictMode, 'TimestampConflictMode should be loaded');
+	Assert.IsTrue(FView.GetShowTimestampFiles, 'ShowTimestampFiles should be loaded');
+	Assert.IsTrue(FView.GetCopyTimestampFiles, 'CopyTimestampFiles should be loaded');
 	Assert.IsTrue(FView.GetFileHistoryEnabled, 'FileHistoryEnabled should be loaded');
 end;
 

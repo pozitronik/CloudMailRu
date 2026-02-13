@@ -130,6 +130,10 @@ type
 		function GetDescriptionCopyFromCloud: Boolean;
 		procedure SetDescriptionTrackCloudFS(Value: Boolean);
 		function GetDescriptionTrackCloudFS: Boolean;
+		procedure SetShowDescriptionFiles(Value: Boolean);
+		function GetShowDescriptionFiles: Boolean;
+		procedure SetCopyDescriptionFiles(Value: Boolean);
+		function GetCopyDescriptionFiles: Boolean;
 		procedure SetDescriptionFileName(Value: WideString);
 		function GetDescriptionFileName: WideString;
 
@@ -140,6 +144,10 @@ type
 		function GetTimestampFileName: WideString;
 		procedure SetTimestampConflictMode(Value: Integer);
 		function GetTimestampConflictMode: Integer;
+		procedure SetShowTimestampFiles(Value: Boolean);
+		function GetShowTimestampFiles: Boolean;
+		procedure SetCopyTimestampFiles(Value: Boolean);
+		function GetCopyTimestampFiles: Boolean;
 
 		{File history settings}
 		procedure SetFileHistoryEnabled(Value: Boolean);
@@ -593,12 +601,16 @@ begin
 		FView.SetDescriptionCopyToCloud(Settings.DescriptionCopyToCloud);
 		FView.SetDescriptionCopyFromCloud(Settings.DescriptionCopyFromCloud);
 		FView.SetDescriptionTrackCloudFS(Settings.DescriptionTrackCloudFS);
+		FView.SetShowDescriptionFiles(Settings.ShowDescriptionFiles);
+		FView.SetCopyDescriptionFiles(Settings.CopyDescriptionFiles);
 		FView.SetDescriptionFileName(Settings.DescriptionFileName);
 
 		{Timestamp settings}
 		FView.SetTimestampMode(Settings.TimestampMode);
 		FView.SetTimestampFileName(Settings.TimestampFileName);
 		FView.SetTimestampConflictMode(Settings.TimestampConflictMode);
+		FView.SetShowTimestampFiles(Settings.ShowTimestampFiles);
+		FView.SetCopyTimestampFiles(Settings.CopyTimestampFiles);
 
 		{File history settings}
 		FView.SetFileHistoryEnabled(Settings.FileHistoryEnabled);
@@ -1205,12 +1217,16 @@ begin
 	Settings.DescriptionCopyToCloud := FView.GetDescriptionCopyToCloud;
 	Settings.DescriptionCopyFromCloud := FView.GetDescriptionCopyFromCloud;
 	Settings.DescriptionTrackCloudFS := FView.GetDescriptionTrackCloudFS;
+	Settings.ShowDescriptionFiles := FView.GetShowDescriptionFiles;
+	Settings.CopyDescriptionFiles := FView.GetCopyDescriptionFiles;
 	Settings.DescriptionFileName := FView.GetDescriptionFileName;
 
 	{Timestamp settings}
 	Settings.TimestampMode := FView.GetTimestampMode;
 	Settings.TimestampFileName := FView.GetTimestampFileName;
 	Settings.TimestampConflictMode := FView.GetTimestampConflictMode;
+	Settings.ShowTimestampFiles := FView.GetShowTimestampFiles;
+	Settings.CopyTimestampFiles := FView.GetCopyTimestampFiles;
 
 	{File history settings}
 	Settings.FileHistoryEnabled := FView.GetFileHistoryEnabled;

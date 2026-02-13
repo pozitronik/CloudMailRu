@@ -1074,17 +1074,17 @@ object AccountsForm: TAccountsForm
         Left = 0
         Top = 0
         Width = 701
-        Height = 168
+        Height = 214
         Align = alTop
         Caption = 'File comments'
         TabOrder = 1
         ExplicitWidth = 1180
         DesignSize = (
           701
-          168)
+          214)
         object DescriptionFileNameLabel: TLabel
           Left = 4
-          Top = 137
+          Top = 183
           Width = 151
           Height = 13
           Hint = 'Leave empty to use default descript.ion'
@@ -1136,16 +1136,6 @@ object AccountsForm: TAccountsForm
           OnClick = GlobalSettingsFieldChanged
           ExplicitWidth = 1172
         end
-        object DescriptionFileNameEdit: TEdit
-          Left = 251
-          Top = 134
-          Width = 446
-          Height = 21
-          Anchors = [akLeft, akTop, akRight]
-          TabOrder = 4
-          OnChange = GlobalSettingsFieldChanged
-          ExplicitWidth = 925
-        end
         object DescriptionTrackCloudFSCB: TCheckBox
           Left = 4
           Top = 109
@@ -1156,32 +1146,61 @@ object AccountsForm: TAccountsForm
           Caption = 'Track cloud filesystem changes'
           ParentShowHint = False
           ShowHint = True
+          TabOrder = 4
+          OnClick = GlobalSettingsFieldChanged
+          ExplicitWidth = 1172
+        end
+        object ShowDescriptionFilesCB: TCheckBox
+          Left = 4
+          Top = 132
+          Width = 693
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Show description file in directory listing'
           TabOrder = 5
           OnClick = GlobalSettingsFieldChanged
           ExplicitWidth = 1172
         end
+        object CopyDescriptionFilesCB: TCheckBox
+          Left = 4
+          Top = 155
+          Width = 693
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Download description file'
+          TabOrder = 6
+          OnClick = GlobalSettingsFieldChanged
+          ExplicitWidth = 1172
+        end
+        object DescriptionFileNameEdit: TEdit
+          Left = 251
+          Top = 180
+          Width = 446
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 7
+          OnChange = GlobalSettingsFieldChanged
+          ExplicitWidth = 925
+        end
       end
       object FileTimestampsCB: TGroupBox
         Left = 0
-        Top = 168
+        Top = 214
         Width = 701
-        Height = 110
+        Height = 156
         Align = alTop
         Caption = 'File timestamps'
         TabOrder = 2
         ExplicitWidth = 1180
         DesignSize = (
           701
-          110)
-        object TimestampFileNameLabel: TLabel
+          156)
+        object TimestampModeLabel: TLabel
           Left = 4
-          Top = 82
-          Width = 193
+          Top = 20
+          Width = 86
           Height = 13
-          Hint = 'Leave empty to use default .cloud_timestamps'
-          Caption = 'Override timestamp metadata file name:'
-          ParentShowHint = False
-          ShowHint = True
+          Caption = 'Timestamp mode:'
         end
         object TimestampConflictModeLabel: TLabel
           Left = 4
@@ -1193,12 +1212,15 @@ object AccountsForm: TAccountsForm
           ParentShowHint = False
           ShowHint = True
         end
-        object TimestampModeLabel: TLabel
+        object TimestampFileNameLabel: TLabel
           Left = 4
-          Top = 20
-          Width = 86
+          Top = 128
+          Width = 193
           Height = 13
-          Caption = 'Timestamp mode:'
+          Hint = 'Leave empty to use default .cloud_timestamps'
+          Caption = 'Override timestamp metadata file name:'
+          ParentShowHint = False
+          ShowHint = True
         end
         object TimestampModeCB: TComboBox
           Left = 251
@@ -1215,16 +1237,6 @@ object AccountsForm: TAccountsForm
             'Full sync')
           ExplicitWidth = 925
         end
-        object TimestampFileNameEdit: TEdit
-          Left = 251
-          Top = 79
-          Width = 446
-          Height = 21
-          Anchors = [akLeft, akTop, akRight]
-          TabOrder = 2
-          OnChange = GlobalSettingsFieldChanged
-          ExplicitWidth = 925
-        end
         object TimestampConflictModeCB: TComboBox
           Left = 251
           Top = 49
@@ -1237,6 +1249,38 @@ object AccountsForm: TAccountsForm
           Items.Strings = (
             'Use stored local time'
             'Use server time on conflict')
+          ExplicitWidth = 925
+        end
+        object ShowTimestampFilesCB: TCheckBox
+          Left = 4
+          Top = 79
+          Width = 693
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Show timestamp file in directory listing'
+          TabOrder = 2
+          OnClick = GlobalSettingsFieldChanged
+          ExplicitWidth = 1172
+        end
+        object CopyTimestampFilesCB: TCheckBox
+          Left = 4
+          Top = 102
+          Width = 693
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Download timestamp file'
+          TabOrder = 3
+          OnClick = GlobalSettingsFieldChanged
+          ExplicitWidth = 1172
+        end
+        object TimestampFileNameEdit: TEdit
+          Left = 251
+          Top = 125
+          Width = 446
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 4
+          OnChange = GlobalSettingsFieldChanged
           ExplicitWidth = 925
         end
       end
