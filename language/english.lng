@@ -448,5 +448,16 @@ DFM_CB_FILE_HISTORY="Show file version history"
 PREFIX_ERR_FILE_HISTORY="File history error: "
 ERR_FILE_HISTORY_MSG="Error while retrieving file %s version history"
 
+# Cache tab
+DFM_TAB_CACHE="Cache"
+DFM_GB_LISTING_CACHE="Directory listing cache"
+DFM_CB_CACHE_ENABLED="Enable directory listing cache"
+DFM_LBL_CACHE_TTL="Cache entry TTL (seconds):"
+DFM_LBL_CACHE_MAX_SIZE="Maximum cache size (MB):"
+DFM_LBL_CACHE_DIR="Cache directory (empty = auto):"
+DFM_BTN_CLEAR_CACHE="Clear cache now"
+DFM_CACHE_CLEARED="Cache cleared successfully"
+DFM_CACHE_CLEAR_ERROR="Error clearing cache: %s"
+
 # Content field
 CONTENT_FIELD_DISABLED="<disabled>"

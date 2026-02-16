@@ -150,6 +150,18 @@ type
 		LanguageList: TListBox;
 		ApplyTranslationBtn: TButton;
 		TranslationStatusLabel: TLabel;
+		CacheTab: TTabSheet;
+		CacheSettingsApplyBtn: TButton;
+		CacheSettingsGB: TGroupBox;
+		CacheTTLLabel: TLabel;
+		CacheMaxSizeLabel: TLabel;
+		CacheDirLabel: TLabel;
+		CacheStatusLabel: TLabel;
+		CacheEnabledCB: TCheckBox;
+		CacheTTLEdit: TSpinEdit;
+		CacheMaxSizeEdit: TSpinEdit;
+		CacheDirEdit: TEdit;
+		ClearCacheButton: TButton;
 		ServerParametersGB: TGroupBox;
 		ApiUrlLabel: TLabel;
 		OAuthUrlLabel: TLabel;
@@ -242,6 +254,7 @@ type
 		procedure TestShareButtonClick(Sender: TObject);
 		procedure ServersButtonClick(Sender: TObject);
 		procedure ApplyTranslationBtnClick(Sender: TObject);
+		procedure ClearCacheButtonClick(Sender: TObject);
     procedure TimestampModeCBChange(Sender: TObject);
 	private
 		FPresenter: TAccountsPresenter;
@@ -349,6 +362,17 @@ type
 		{IAccountsView - File history settings}
 		procedure SetFileHistoryEnabled(Value: Boolean);
 		function GetFileHistoryEnabled: Boolean;
+
+		{IAccountsView - Cache settings}
+		procedure SetCacheEnabled(Value: Boolean);
+		function GetCacheEnabled: Boolean;
+		procedure SetCacheTTL(Value: Integer);
+		function GetCacheTTL: Integer;
+		procedure SetCacheMaxSizeMB(Value: Integer);
+		function GetCacheMaxSizeMB: Integer;
+		procedure SetCacheDir(Value: WideString);
+		function GetCacheDir: WideString;
+		procedure SetCacheStatus(const Value: WideString);
 
 		{IAccountsView - Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -961,6 +985,53 @@ begin
 	Result := FileHistoryCB.Checked;
 end;
 
+{IAccountsView - Cache settings}
+
+procedure TAccountsForm.SetCacheEnabled(Value: Boolean);
+begin
+	CacheEnabledCB.Checked := Value;
+end;
+
+function TAccountsForm.GetCacheEnabled: Boolean;
+begin
+	Result := CacheEnabledCB.Checked;
+end;
+
+procedure TAccountsForm.SetCacheTTL(Value: Integer);
+begin
+	CacheTTLEdit.Value := Value;
+end;
+
+function TAccountsForm.GetCacheTTL: Integer;
+begin
+	Result := CacheTTLEdit.Value;
+end;
+
+procedure TAccountsForm.SetCacheMaxSizeMB(Value: Integer);
+begin
+	CacheMaxSizeEdit.Value := Value;
+end;
+
+function TAccountsForm.GetCacheMaxSizeMB: Integer;
+begin
+	Result := CacheMaxSizeEdit.Value;
+end;
+
+procedure TAccountsForm.SetCacheDir(Value: WideString);
+begin
+	CacheDirEdit.Text := Value;
+end;
+
+function TAccountsForm.GetCacheDir: WideString;
+begin
+	Result := CacheDirEdit.Text;
+end;
+
+procedure TAccountsForm.SetCacheStatus(const Value: WideString);
+begin
+	CacheStatusLabel.Caption := Value;
+end;
+
 {IAccountsView - Streaming extensions}
 
 procedure TAccountsForm.SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -1085,6 +1156,7 @@ begin
 	GlobalSettingsApplyBtn.Enabled := Value;
 	NetworkSettingsApplyBtn.Enabled := Value;
 	CommentsSettingsApplyBtn.Enabled := Value;
+	CacheSettingsApplyBtn.Enabled := Value;
 end;
 
 {IAccountsView - Proxy controls state}
@@ -1936,6 +2008,7 @@ begin
 	NetworkTab.Caption := DFM_TAB_NETWORK_SETTINGS;
 	CommentsTab.Caption := DFM_TAB_METADATA;
 	StreamingTab.Caption := DFM_TAB_STREAMING;
+	CacheTab.Caption := DFM_TAB_CACHE;
 	TranslationTab.Caption := DFM_TAB_TRANSLATION;
 
 	{Apply buttons - all share the same translated label}
@@ -1943,6 +2016,7 @@ begin
 	GlobalSettingsApplyBtn.Caption := DFM_BTN_APPLY;
 	NetworkSettingsApplyBtn.Caption := DFM_BTN_APPLY;
 	CommentsSettingsApplyBtn.Caption := DFM_BTN_APPLY;
+	CacheSettingsApplyBtn.Caption := DFM_BTN_APPLY;
 	ApplyExtButton.Caption := DFM_BTN_APPLY;
 	ApplyTranslationBtn.Caption := DFM_BTN_APPLY;
 
@@ -2042,6 +2116,14 @@ begin
 	StreamingExtensionsListView.Columns[0].Caption := DFM_COL_EXTENSION;
 	StreamingExtensionsListView.Columns[1].Caption := DFM_COL_TYPE;
 
+	{Cache tab}
+	CacheSettingsGB.Caption := DFM_GB_LISTING_CACHE;
+	CacheEnabledCB.Caption := DFM_CB_CACHE_ENABLED;
+	CacheTTLLabel.Caption := DFM_LBL_CACHE_TTL;
+	CacheMaxSizeLabel.Caption := DFM_LBL_CACHE_MAX_SIZE;
+	CacheDirLabel.Caption := DFM_LBL_CACHE_DIR;
+	ClearCacheButton.Caption := DFM_BTN_CLEAR_CACHE;
+
 	{Servers tab}
 	ServersTab.Caption := DFM_TAB_SERVERS;
 	ServerLabel.Caption := DFM_LBL_SERVER;
@@ -2085,6 +2167,13 @@ end;
 procedure TAccountsForm.ApplyTranslationBtnClick(Sender: TObject);
 begin
 	FPresenter.OnApplyTranslationClick;
+end;
+
+{Event handlers - Cache tab}
+
+procedure TAccountsForm.ClearCacheButtonClick(Sender: TObject);
+begin
+	FPresenter.OnClearCacheClick;
 end;
 
 {IAccountsView - Dialogs}

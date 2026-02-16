@@ -307,6 +307,8 @@ uses
 	ListingResultApplierTest in 'Application\Listing\ListingResultApplierTest.pas',
 	DownloadOrchestrator in '..\src\Application\Download\DownloadOrchestrator.pas',
 	DownloadOrchestratorTest in 'Application\Download\DownloadOrchestratorTest.pas',
+	DirectoryCache in '..\src\Application\Cache\DirectoryCache.pas',
+	DirectoryCacheTest in 'Application\Cache\DirectoryCacheTest.pas',
 	CloudHashCalculator in '..\src\Infrastructure\Hash\CloudHashCalculator.pas',
 	CloudHashCalculatorTest in 'Infrastructure\Hash\CloudHashCalculatorTest.pas',
 	CloudShardManager in '..\src\Infrastructure\Shard\CloudShardManager.pas',

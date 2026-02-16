@@ -88,6 +88,13 @@ type
 		{File history settings}
 		FFileHistoryEnabled: Boolean;
 
+		{Cache settings}
+		FCacheEnabled: Boolean;
+		FCacheTTL: Integer;
+		FCacheMaxSizeMB: Integer;
+		FCacheDir: WideString;
+		FCacheStatus: WideString;
+
 		{Streaming extensions}
 		FStreamingDisplayItems: TArray<TStreamingDisplayItem>;
 		FStreamingSelectedIndex: Integer;
@@ -276,6 +283,17 @@ type
 		{IAccountsView - File history settings}
 		procedure SetFileHistoryEnabled(Value: Boolean);
 		function GetFileHistoryEnabled: Boolean;
+
+		{IAccountsView - Cache settings}
+		procedure SetCacheEnabled(Value: Boolean);
+		function GetCacheEnabled: Boolean;
+		procedure SetCacheTTL(Value: Integer);
+		function GetCacheTTL: Integer;
+		procedure SetCacheMaxSizeMB(Value: Integer);
+		function GetCacheMaxSizeMB: Integer;
+		procedure SetCacheDir(Value: WideString);
+		function GetCacheDir: WideString;
+		procedure SetCacheStatus(const Value: WideString);
 
 		{IAccountsView - Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -1259,6 +1277,53 @@ end;
 function TMockAccountsView.GetFileHistoryEnabled: Boolean;
 begin
 	Result := FFileHistoryEnabled;
+end;
+
+{Cache settings}
+
+procedure TMockAccountsView.SetCacheEnabled(Value: Boolean);
+begin
+	FCacheEnabled := Value;
+end;
+
+function TMockAccountsView.GetCacheEnabled: Boolean;
+begin
+	Result := FCacheEnabled;
+end;
+
+procedure TMockAccountsView.SetCacheTTL(Value: Integer);
+begin
+	FCacheTTL := Value;
+end;
+
+function TMockAccountsView.GetCacheTTL: Integer;
+begin
+	Result := FCacheTTL;
+end;
+
+procedure TMockAccountsView.SetCacheMaxSizeMB(Value: Integer);
+begin
+	FCacheMaxSizeMB := Value;
+end;
+
+function TMockAccountsView.GetCacheMaxSizeMB: Integer;
+begin
+	Result := FCacheMaxSizeMB;
+end;
+
+procedure TMockAccountsView.SetCacheDir(Value: WideString);
+begin
+	FCacheDir := Value;
+end;
+
+function TMockAccountsView.GetCacheDir: WideString;
+begin
+	Result := FCacheDir;
+end;
+
+procedure TMockAccountsView.SetCacheStatus(const Value: WideString);
+begin
+	FCacheStatus := Value;
 end;
 
 {Streaming extensions}
@@ -3295,6 +3360,10 @@ begin
 	Settings.HideDescriptionFile := True;
 	Settings.SkipDescriptionDownload := True;
 	Settings.FileHistoryEnabled := True;
+	Settings.CacheListings := True;
+	Settings.ListingCacheTTL := 120;
+	Settings.ListingCacheMaxSizeMB := 100;
+	Settings.ListingCacheDir := 'C:\MyCache';
 	FSettingsManager.SetSettings(Settings);
 
 	FPresenter.Initialize('');
@@ -3322,6 +3391,10 @@ begin
 	Assert.IsTrue(FView.GetHideTimestampFile, 'HideTimestampFile should be loaded');
 	Assert.IsTrue(FView.GetSkipTimestampDownload, 'SkipTimestampDownload should be loaded');
 	Assert.IsTrue(FView.GetFileHistoryEnabled, 'FileHistoryEnabled should be loaded');
+	Assert.IsTrue(FView.GetCacheEnabled, 'CacheEnabled should be loaded');
+	Assert.AreEqual(120, FView.GetCacheTTL, 'CacheTTL should be loaded');
+	Assert.AreEqual(100, FView.GetCacheMaxSizeMB, 'CacheMaxSizeMB should be loaded');
+	Assert.AreEqual('C:\MyCache', FView.GetCacheDir, 'CacheDir should be loaded');
 end;
 
 procedure TAccountsPresenterTest.TestLoadGlobalSettingsWithCustomUserAgent;

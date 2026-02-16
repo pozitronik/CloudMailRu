@@ -138,6 +138,14 @@ type
 		procedure TestParse_WithoutCount_ReturnsZeroExpectedCount;
 		[Test]
 		procedure TestParse_WithCount_InvalidJSON_ReturnsZeroExpectedCount;
+
+		{Roundtrip serialization tests}
+		[Test]
+		{Serialize 3 items, parse back, verify count and fields}
+		procedure TestToJSON_ListRoundtrip;
+		[Test]
+		{Serialize empty array, parse back, verify 0 items}
+		procedure TestToJSON_EmptyList;
 	end;
 
 implementation
@@ -377,6 +385,75 @@ var
 begin
 	Assert.IsFalse(TCloudDirItemListJsonAdapter.Parse(JSON_INVALID, List, ExpectedCount));
 	Assert.AreEqual(Integer(0), ExpectedCount, 'ExpectedCount should be 0 on parse failure');
+end;
+
+procedure TCloudDirItemListJsonAdapterTest.TestToJSON_ListRoundtrip;
+var
+	Items, Parsed: TCloudDirItemList;
+	I: Integer;
+	JSON: WideString;
+begin
+	{Build a 3-item list with mixed files and a folder}
+	SetLength(Items, 3);
+
+	Items[0] := Default(TCloudDirItem);
+	Items[0].name := 'alpha.txt';
+	Items[0].type_ := 'file';
+	Items[0].home := '/alpha.txt';
+	Items[0].size := 100;
+	Items[0].hash := 'HASH_A';
+	Items[0].mtime := 1700000001;
+
+	Items[1] := Default(TCloudDirItem);
+	Items[1].name := 'beta';
+	Items[1].type_ := 'folder';
+	Items[1].home := '/beta';
+	Items[1].size := 0;
+	Items[1].tree := '/';
+	Items[1].folders_count := 2;
+	Items[1].files_count := 10;
+
+	Items[2] := Default(TCloudDirItem);
+	Items[2].name := 'gamma.bin';
+	Items[2].type_ := 'file';
+	Items[2].home := '/gamma.bin';
+	Items[2].size := 999999;
+	Items[2].hash := 'HASH_G';
+	Items[2].mtime := 1700000003;
+
+	JSON := TCloudDirItemListJsonAdapter.ToJSON(Items);
+
+	// ToJSON produces {"list":[...]}, which is the body structure Parse expects
+	Assert.IsTrue(TCloudDirItemListJsonAdapter.Parse(
+		'{"status":200,"body":' + JSON + '}', Parsed));
+
+	Assert.AreEqual(3, Integer(Length(Parsed)));
+
+	Assert.AreEqual(WideString('alpha.txt'), Parsed[0].name);
+	Assert.AreEqual(Int64(100), Parsed[0].size);
+	Assert.AreEqual(WideString('HASH_A'), Parsed[0].hash);
+
+	Assert.AreEqual(WideString('beta'), Parsed[1].name);
+	Assert.AreEqual(WideString('folder'), Parsed[1].type_);
+	Assert.AreEqual(2, Parsed[1].folders_count);
+	Assert.AreEqual(10, Parsed[1].files_count);
+
+	Assert.AreEqual(WideString('gamma.bin'), Parsed[2].name);
+	Assert.AreEqual(Int64(999999), Parsed[2].size);
+end;
+
+procedure TCloudDirItemListJsonAdapterTest.TestToJSON_EmptyList;
+var
+	Items, Parsed: TCloudDirItemList;
+	JSON: WideString;
+begin
+	SetLength(Items, 0);
+
+	JSON := TCloudDirItemListJsonAdapter.ToJSON(Items);
+
+	Assert.IsTrue(TCloudDirItemListJsonAdapter.Parse(
+		'{"status":200,"body":' + JSON + '}', Parsed));
+	Assert.AreEqual(0, Integer(Length(Parsed)));
 end;
 
 initialization

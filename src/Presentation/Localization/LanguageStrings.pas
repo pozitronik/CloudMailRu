@@ -455,6 +455,17 @@ var
 	DFM_TRANS_APPLIED: WideString;
 	DFM_TRANS_ERROR: WideString;
 
+	{Cache tab}
+	DFM_TAB_CACHE: WideString;
+	DFM_GB_LISTING_CACHE: WideString;
+	DFM_CB_CACHE_ENABLED: WideString;
+	DFM_LBL_CACHE_TTL: WideString;
+	DFM_LBL_CACHE_MAX_SIZE: WideString;
+	DFM_LBL_CACHE_DIR: WideString;
+	DFM_BTN_CLEAR_CACHE: WideString;
+	DFM_CACHE_CLEARED: WideString;
+	DFM_CACHE_CLEAR_ERROR: WideString;
+
 	{Content field}
 	CONTENT_FIELD_DISABLED: WideString;
 
@@ -913,6 +924,16 @@ begin
 	DFM_TRANS_APPLIED := 'Translation applied: %s';
 	DFM_TRANS_ERROR := 'Error: %s';
 
+	DFM_TAB_CACHE := 'Cache';
+	DFM_GB_LISTING_CACHE := 'Directory listing cache';
+	DFM_CB_CACHE_ENABLED := 'Enable directory listing cache';
+	DFM_LBL_CACHE_TTL := 'Cache entry TTL (seconds):';
+	DFM_LBL_CACHE_MAX_SIZE := 'Maximum cache size (MB):';
+	DFM_LBL_CACHE_DIR := 'Cache directory (empty = auto):';
+	DFM_BTN_CLEAR_CACHE := 'Clear cache now';
+	DFM_CACHE_CLEARED := 'Cache cleared successfully';
+	DFM_CACHE_CLEAR_ERROR := 'Error clearing cache: %s';
+
 	CONTENT_FIELD_DISABLED := '<disabled>';
 end;
 
@@ -1351,6 +1372,16 @@ begin
 	TranslationRegistry.Add('DFM_TRANS_RESTORED', @DFM_TRANS_RESTORED);
 	TranslationRegistry.Add('DFM_TRANS_APPLIED', @DFM_TRANS_APPLIED);
 	TranslationRegistry.Add('DFM_TRANS_ERROR', @DFM_TRANS_ERROR);
+
+	TranslationRegistry.Add('DFM_TAB_CACHE', @DFM_TAB_CACHE);
+	TranslationRegistry.Add('DFM_GB_LISTING_CACHE', @DFM_GB_LISTING_CACHE);
+	TranslationRegistry.Add('DFM_CB_CACHE_ENABLED', @DFM_CB_CACHE_ENABLED);
+	TranslationRegistry.Add('DFM_LBL_CACHE_TTL', @DFM_LBL_CACHE_TTL);
+	TranslationRegistry.Add('DFM_LBL_CACHE_MAX_SIZE', @DFM_LBL_CACHE_MAX_SIZE);
+	TranslationRegistry.Add('DFM_LBL_CACHE_DIR', @DFM_LBL_CACHE_DIR);
+	TranslationRegistry.Add('DFM_BTN_CLEAR_CACHE', @DFM_BTN_CLEAR_CACHE);
+	TranslationRegistry.Add('DFM_CACHE_CLEARED', @DFM_CACHE_CLEARED);
+	TranslationRegistry.Add('DFM_CACHE_CLEAR_ERROR', @DFM_CACHE_CLEAR_ERROR);
 
 	TranslationRegistry.Add('CONTENT_FIELD_DISABLED', @CONTENT_FIELD_DISABLED);
 end;

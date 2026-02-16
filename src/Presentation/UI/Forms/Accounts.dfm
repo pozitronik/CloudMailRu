@@ -1409,6 +1409,113 @@ object AccountsForm: TAccountsForm
         OnSelectItem = StreamingExtensionsListViewSelectItem
       end
     end
+    object CacheTab: TTabSheet
+      Caption = 'Cache'
+      ImageIndex = 5
+      DesignSize = (
+        701
+        468)
+      object CacheSettingsApplyBtn: TButton
+        Left = 573
+        Top = 439
+        Width = 124
+        Height = 25
+        Anchors = [akRight, akBottom]
+        Caption = 'Apply'
+        Enabled = False
+        TabOrder = 0
+        OnClick = GlobalSettingsApplyBtnClick
+      end
+      object CacheSettingsGB: TGroupBox
+        Left = 0
+        Top = 0
+        Width = 701
+        Height = 210
+        Align = alTop
+        Caption = 'Directory listing cache'
+        TabOrder = 1
+        DesignSize = (
+          701
+          210)
+        object CacheTTLLabel: TLabel
+          Left = 4
+          Top = 43
+          Width = 137
+          Height = 13
+          Caption = 'Cache entry TTL (seconds):'
+        end
+        object CacheMaxSizeLabel: TLabel
+          Left = 4
+          Top = 73
+          Width = 134
+          Height = 13
+          Caption = 'Maximum cache size (MB):'
+        end
+        object CacheDirLabel: TLabel
+          Left = 4
+          Top = 103
+          Width = 162
+          Height = 13
+          Caption = 'Cache directory (empty = auto):'
+        end
+        object CacheStatusLabel: TLabel
+          Left = 4
+          Top = 170
+          Width = 3
+          Height = 13
+        end
+        object CacheEnabledCB: TCheckBox
+          Left = 4
+          Top = 17
+          Width = 693
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Enable directory listing cache'
+          TabOrder = 0
+          OnClick = GlobalSettingsFieldChanged
+        end
+        object CacheTTLEdit: TSpinEdit
+          Left = 290
+          Top = 40
+          Width = 90
+          Height = 22
+          MaxValue = 86400
+          MinValue = 1
+          TabOrder = 1
+          Value = 60
+          OnChange = GlobalSettingsFieldChanged
+        end
+        object CacheMaxSizeEdit: TSpinEdit
+          Left = 290
+          Top = 70
+          Width = 90
+          Height = 22
+          MaxValue = 10240
+          MinValue = 1
+          TabOrder = 2
+          Value = 50
+          OnChange = GlobalSettingsFieldChanged
+        end
+        object CacheDirEdit: TEdit
+          Left = 290
+          Top = 100
+          Width = 407
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 3
+          OnChange = GlobalSettingsFieldChanged
+        end
+        object ClearCacheButton: TButton
+          Left = 4
+          Top = 136
+          Width = 150
+          Height = 25
+          Caption = 'Clear cache now'
+          TabOrder = 4
+          OnClick = ClearCacheButtonClick
+        end
+      end
+    end
     object ServersTab: TTabSheet
       Caption = 'Servers'
       ImageIndex = 6

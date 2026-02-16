@@ -96,6 +96,7 @@ uses
 	OperationStatusContextBuilder,
 	ListingResultApplier,
 	DownloadOrchestrator,
+	DirectoryCache,
 	CloudMailRuFactory,
 	OpenSSLProvider,
 	SSLHandlerFactory,
@@ -161,6 +162,7 @@ type
 		FOperationStatusContextBuilder: IOperationStatusContextBuilder;
 		FListingResultApplier: IListingResultApplier;
 		FDownloadOrchestrator: IDownloadOrchestrator;
+		FDirectoryCache: IDirectoryCache;
 		FTCHandler: ITCHandler;
 		FOpenSSLProvider: IOpenSSLProvider;
 		FSSLHandlerFactory: ISSLHandlerFactory;
@@ -190,6 +192,10 @@ type
 		procedure LoadTranslationOnStartup;
 		{Removes metadata files from listing based on HideDescriptionFile/HideTimestampFile settings}
 		procedure FilterHiddenMetadataFiles(var Listing: TCloudDirItemList);
+		{Invalidates the cache entry for the parent directory of the given path}
+		procedure InvalidateParentCache(const FullPath: WideString);
+		{Resolves cache directory from settings: custom path or auto (%TEMP%\CloudMailRu\cache\)}
+		class function ResolveCacheDir(const Settings: TPluginSettings): WideString; static;
 	protected
 		{Ensures cloud is authorized. Returns True if authorized, False otherwise.
 			Attempts authorization if not yet authorized. Sets LastError on failure.}
@@ -287,6 +293,20 @@ begin
 	end;
 end;
 
+class function TWFXApplication.ResolveCacheDir(const Settings: TPluginSettings): WideString;
+begin
+	if Settings.ListingCacheDir <> '' then
+		Result := IncludeTrailingPathDelimiter(Settings.ListingCacheDir)
+	else
+		Result := IncludeTrailingPathDelimiter(
+			IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) + 'CloudMailRu\cache');
+end;
+
+procedure TWFXApplication.InvalidateParentCache(const FullPath: WideString);
+begin
+	FDirectoryCache.InvalidatePath(ExcludeTrailingPathDelimiter(ExtractFilePath(FullPath)));
+end;
+
 procedure TWFXApplication.LoadTranslationOnStartup;
 var
 	Manager: TTranslationManager;
@@ -350,6 +370,14 @@ begin
 	FIconProvider := TIconProvider.Create;
 	FOperationLifecycle := TOperationLifecycleHandler.Create;
 	FListingProvider := TListingProvider.Create;
+
+	if SettingsManager.GetSettings.CacheListings then
+		FDirectoryCache := TDiskDirectoryCache.Create(
+			ResolveCacheDir(SettingsManager.GetSettings),
+			SettingsManager.GetSettings.ListingCacheTTL,
+			SettingsManager.GetSettings.ListingCacheMaxSizeMB)
+	else
+		FDirectoryCache := TNullDirectoryCache.Create;
 
 	FFileSystem := TWindowsFileSystem.Create;
 	FTCHandler := TTCHandler.Create(TWindowsEnvironment.Create);
@@ -509,6 +537,7 @@ begin
 	FOperationStatusContextBuilder := nil;
 	FListingResultApplier := nil;
 	FDownloadOrchestrator := nil;
+	FDirectoryCache := nil;
 	FTCHandler := nil;
 	ConnectionManager := nil;
 	FOpenSSLProvider := nil;
@@ -549,6 +578,7 @@ begin
 		begin
 			SettingsManager.Refresh;
 			ConnectionManager.InvalidateAll;
+			FDirectoryCache.InvalidateAll;
 		end;
 	end else begin {One invite item - delegate to handler}
 		if not EnsureAuthorized(Cloud) then
@@ -579,6 +609,7 @@ begin
 		begin
 			SettingsManager.Refresh;
 			ConnectionManager.InvalidateAll;
+			FDirectoryCache.InvalidateAll;
 		end;
 	end else begin
 		Cloud := ConnectionManager.Get(RealPath.account);
@@ -613,6 +644,7 @@ begin
 				begin
 					SettingsManager.Refresh;
 					ConnectionManager.InvalidateAll;
+					FDirectoryCache.InvalidateAll;
 				end;
 			end;
 		satPropertyDialog:
@@ -746,6 +778,7 @@ begin
 		Result := Cloud.FileOperations.Delete(RealPath.Path);
 	if Result then
 	begin
+		InvalidateParentCache(RemoteName);
 		FDescriptionSyncGuard.OnFileDeleted(RealPath, Cloud);
 		FTimestampSyncGuard.OnFileDeleted(RealPath, Cloud);
 	end;
@@ -756,6 +789,7 @@ begin
 	if not FThreadState.HasActiveBackgroundJobs(ExtractFileName(DisconnectRoot)) then
 	begin
 		ConnectionManager.Free(ExtractFileName(DisconnectRoot));
+		FDirectoryCache.InvalidateAll;
 		Result := true;
 	end else begin {Could add a wait mechanism for background operation completion here}
 		Result := false;
@@ -898,16 +932,40 @@ begin
 		BaseResult.Handle := RootResult.Handle;
 		Result := FListingResultApplier.Apply(BaseResult, FindData, FileCounter);
 	end else begin {Regular path listing}
-		PathResult := FPathListingHandler.Execute(GlobalPath);
-		CurrentListing := PathResult.Listing;
-		FilterHiddenMetadataFiles(CurrentListing);
-		CurrentIncomingInvitesListing := PathResult.IncomingInvites;
+		if FDirectoryCache.TryGet(GlobalPath, CurrentListing) then
+		begin
+			{Cache hit -- apply metadata filtering on the copy and build result manually}
+			FilterHiddenMetadataFiles(CurrentListing);
+			CurrentIncomingInvitesListing := nil;
+			if Length(CurrentListing) = 0 then
+			begin
+				BaseResult.FindData.InitAsEmptyDir();
+				BaseResult.Handle := FIND_NO_MORE_FILES;
+				BaseResult.ErrorCode := ERROR_NO_MORE_FILES;
+				BaseResult.FileCounter := 0;
+			end else begin
+				BaseResult.FindData := CurrentListing[0].ToFindData(False);
+				BaseResult.FileCounter := 1;
+				BaseResult.Handle := FIND_OK;
+				BaseResult.ErrorCode := 0;
+			end;
+		end else begin
+			{Cache miss -- fetch from server}
+			PathResult := FPathListingHandler.Execute(GlobalPath);
+			CurrentListing := PathResult.Listing;
+			CurrentIncomingInvitesListing := PathResult.IncomingInvites;
 
-		{Apply common result fields}
-		BaseResult.FileCounter := PathResult.FileCounter;
-		BaseResult.FindData := PathResult.FindData;
-		BaseResult.ErrorCode := PathResult.ErrorCode;
-		BaseResult.Handle := PathResult.Handle;
+			{Cache raw listing for regular (non-virtual) directories only}
+			if (PathResult.ErrorCode = 0) and not PathResult.RealPath.IsVirtual then
+				FDirectoryCache.Put(GlobalPath, CurrentListing);
+
+			FilterHiddenMetadataFiles(CurrentListing);
+
+			BaseResult.FileCounter := PathResult.FileCounter;
+			BaseResult.FindData := PathResult.FindData;
+			BaseResult.ErrorCode := PathResult.ErrorCode;
+			BaseResult.Handle := PathResult.Handle;
+		end;
 		Result := FListingResultApplier.Apply(BaseResult, FindData, FileCounter);
 	end;
 end;
@@ -987,9 +1045,13 @@ begin
 		exit(false);
 
 	Result := Cloud.FileOperations.CreateDirectory(RealPath.Path);
-	{Need to check operation context => directory can be moved}
-	if Result and FMoveOperationTracker.IsMoveOperation then
-		FMoveOperationTracker.TrackMoveTarget(RealPath);
+	if Result then
+	begin
+		InvalidateParentCache(Path);
+		{Need to check operation context => directory can be moved}
+		if FMoveOperationTracker.IsMoveOperation then
+			FMoveOperationTracker.TrackMoveTarget(RealPath);
+	end;
 end;
 
 function TWFXApplication.FsPutFile(LocalName, RemoteName: WideString; CopyFlags: Integer): Integer;
@@ -1015,7 +1077,11 @@ begin
 	Result := PutRemoteFile(RealPath, LocalName, RemoteName, CopyFlags);
 
 	if Result <> FS_FILE_WRITEERROR then
+	begin
+		if Result = FS_FILE_OK then
+			InvalidateParentCache(RemoteName);
 		exit;
+	end;
 
 	Result := FRetryHandler.HandleOperationError(Result, rotUpload, ERR_UPLOAD_FILE_ASK, ERR_UPLOAD, UPLOAD_FILE_RETRY, LocalName,
 		function: Integer
@@ -1026,6 +1092,8 @@ begin
 		begin
 			Result := Progress.Progress(PWideChar(LocalName), RemoteName, 0);
 		end);
+	if Result = FS_FILE_OK then
+		InvalidateParentCache(RemoteName);
 end;
 
 function TWFXApplication.FsRemoveDir(RemoteName: WideString): Boolean;
@@ -1047,6 +1115,7 @@ begin
 
 	if Result then
 	begin
+		InvalidateParentCache(RemoteName);
 		{Directory can be deleted after moving operation - use tracker to check context}
 		if FMoveOperationTracker.IsMoveOperation then
 		begin
@@ -1091,6 +1160,12 @@ begin
 			end)
 	else {Same account - delegate to handler}
 		Result := FSameAccountMoveHandler.Execute(OldCloud, OldRealPath, NewRealPath, Move, OverWrite);
+
+	if Result = FS_FILE_OK then
+	begin
+		InvalidateParentCache(OldName);
+		InvalidateParentCache(NewName);
+	end;
 
 	Progress.Progress(OldName, NewName, 100);
 end;

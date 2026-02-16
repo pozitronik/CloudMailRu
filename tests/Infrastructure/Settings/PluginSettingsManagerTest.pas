@@ -108,6 +108,30 @@ type
 
 		[Test]
 		procedure Test_SSLBackend_DefaultsToAuto;
+
+		[Test]
+		procedure Test_CacheListings_DefaultsToTrue;
+
+		[Test]
+		procedure Test_ListingCacheTTL_DefaultsTo60;
+
+		[Test]
+		procedure Test_Save_SkipsDefaultCacheSettings;
+
+		[Test]
+		procedure Test_Save_WritesCacheSettings;
+
+		[Test]
+		procedure Test_ListingCacheMaxSizeMB_DefaultsTo50;
+
+		[Test]
+		procedure Test_ListingCacheDir_DefaultsToEmpty;
+
+		[Test]
+		procedure Test_Save_WritesNonDefaultCacheMaxSize;
+
+		[Test]
+		procedure Test_Save_WritesNonDefaultCacheDir;
 	end;
 
 	[TestFixture]
@@ -516,6 +540,104 @@ begin
 	finally
 		DefaultManager.Free;
 	end;
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_CacheListings_DefaultsToTrue;
+var
+	DefaultManager: TPluginSettingsManager;
+begin
+	DefaultManager := TPluginSettingsManager.Create(TMemoryConfigFile.Create(''));
+	try
+		Assert.IsTrue(DefaultManager.Settings.CacheListings, 'CacheListings should default to True');
+	finally
+		DefaultManager.Free;
+	end;
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_ListingCacheTTL_DefaultsTo60;
+var
+	DefaultManager: TPluginSettingsManager;
+begin
+	DefaultManager := TPluginSettingsManager.Create(TMemoryConfigFile.Create(''));
+	try
+		Assert.AreEqual(60, DefaultManager.Settings.ListingCacheTTL, 'ListingCacheTTL should default to 60');
+	finally
+		DefaultManager.Free;
+	end;
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_Save_SkipsDefaultCacheSettings;
+begin
+	{Set to defaults}
+	FManager.Settings.CacheListings := DEFAULT_LISTING_CACHE_ENABLED;
+	FManager.Settings.ListingCacheTTL := DEFAULT_LISTING_CACHE_TTL;
+	FManager.Settings.ListingCacheMaxSizeMB := DEFAULT_LISTING_CACHE_MAX_SIZE_MB;
+	FManager.Settings.ListingCacheDir := DEFAULT_LISTING_CACHE_DIR;
+
+	FManager.Save;
+
+	{Default values should not be written}
+	Assert.AreEqual('fallback', FConfigFile.ReadString('Main', 'CacheListings', 'fallback'));
+	Assert.AreEqual(999, FConfigFile.ReadInteger('Main', 'ListingCacheTTL', 999));
+	Assert.AreEqual(999, FConfigFile.ReadInteger('Main', 'ListingCacheMaxSizeMB', 999));
+	Assert.AreEqual('fallback', FConfigFile.ReadString('Main', 'ListingCacheDir', 'fallback'));
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_Save_WritesCacheSettings;
+begin
+	FManager.Settings.CacheListings := False;
+	FManager.Settings.ListingCacheTTL := 120;
+	FManager.Settings.ListingCacheMaxSizeMB := 200;
+	FManager.Settings.ListingCacheDir := 'E:\CacheDir';
+
+	FManager.Save;
+
+	Assert.IsFalse(FConfigFile.ReadBool('Main', 'CacheListings', True));
+	Assert.AreEqual(120, FConfigFile.ReadInteger('Main', 'ListingCacheTTL', 0));
+	Assert.AreEqual(200, FConfigFile.ReadInteger('Main', 'ListingCacheMaxSizeMB', 0));
+	Assert.AreEqual('E:\CacheDir', FConfigFile.ReadString('Main', 'ListingCacheDir', ''));
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_ListingCacheMaxSizeMB_DefaultsTo50;
+var
+	DefaultManager: TPluginSettingsManager;
+begin
+	DefaultManager := TPluginSettingsManager.Create(TMemoryConfigFile.Create(''));
+	try
+		Assert.AreEqual(50, DefaultManager.Settings.ListingCacheMaxSizeMB, 'ListingCacheMaxSizeMB should default to 50');
+	finally
+		DefaultManager.Free;
+	end;
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_ListingCacheDir_DefaultsToEmpty;
+var
+	DefaultManager: TPluginSettingsManager;
+begin
+	DefaultManager := TPluginSettingsManager.Create(TMemoryConfigFile.Create(''));
+	try
+		Assert.AreEqual(WideString(''), DefaultManager.Settings.ListingCacheDir, 'ListingCacheDir should default to empty');
+	finally
+		DefaultManager.Free;
+	end;
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_Save_WritesNonDefaultCacheMaxSize;
+begin
+	FManager.Settings.ListingCacheMaxSizeMB := 200;
+
+	FManager.Save;
+
+	Assert.AreEqual(200, FConfigFile.ReadInteger('Main', 'ListingCacheMaxSizeMB', 0));
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_Save_WritesNonDefaultCacheDir;
+begin
+	FManager.Settings.ListingCacheDir := 'D:\MyCache\CloudMailRu';
+
+	FManager.Save;
+
+	Assert.AreEqual('D:\MyCache\CloudMailRu', FConfigFile.ReadString('Main', 'ListingCacheDir', ''));
 end;
 
 {TPluginSettingsManagerStreamingTest}

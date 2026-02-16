@@ -23,6 +23,12 @@ type
 		 @param List Output parameter that receives parsed array
 		 @return True if parsing succeeded, False otherwise}
 		class function Parse(const JSON: WideString; var List: TCloudDirItemList): Boolean; overload; static;
+
+		{Serializes a TCloudDirItemList to compact JSON string.
+		 Produces a "list":[...] structure compatible with Parse.
+		 @param Items The item list to serialize
+		 @return Compact JSON string}
+		class function ToJSON(const Items: TCloudDirItemList): WideString; static;
 	end;
 
 implementation
@@ -71,6 +77,27 @@ var
 	Ignored: Integer;
 begin
 	Result := Parse(JSON, List, Ignored);
+end;
+
+class function TCloudDirItemListJsonAdapter.ToJSON(const Items: TCloudDirItemList): WideString;
+var
+	I: Integer;
+	SB: TStringBuilder;
+begin
+	SB := TStringBuilder.Create;
+	try
+		SB.Append('{"list":[');
+		for I := 0 to High(Items) do
+		begin
+			if I > 0 then
+				SB.Append(',');
+			SB.Append(TCloudDirItemJsonAdapter.ItemToJSON(Items[I]));
+		end;
+		SB.Append(']}');
+		Result := SB.ToString;
+	finally
+		SB.Free;
+	end;
 end;
 
 end.

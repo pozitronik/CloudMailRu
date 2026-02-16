@@ -444,5 +444,16 @@ DFM_CB_FILE_HISTORY="Показывать историю версий файло
 PREFIX_ERR_FILE_HISTORY="Ошибка истории файла: "
 ERR_FILE_HISTORY_MSG="Ошибка при получении истории версий файла %s"
 
+# Вкладка кеша
+DFM_TAB_CACHE="Кеш"
+DFM_GB_LISTING_CACHE="Кеширование списков каталогов"
+DFM_CB_CACHE_ENABLED="Включить кеширование списков каталогов"
+DFM_LBL_CACHE_TTL="Время жизни записи кеша (секунды):"
+DFM_LBL_CACHE_MAX_SIZE="Максимальный размер кеша (МБ):"
+DFM_LBL_CACHE_DIR="Каталог кеша (пусто = автоматически):"
+DFM_BTN_CLEAR_CACHE="Очистить кеш"
+DFM_CACHE_CLEARED="Кеш успешно очищен"
+DFM_CACHE_CLEAR_ERROR="Ошибка очистки кеша: %s"
+
 # Поле содержимого
 CONTENT_FIELD_DISABLED="<отключено>"

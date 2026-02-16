@@ -153,6 +153,17 @@ type
 		procedure SetFileHistoryEnabled(Value: Boolean);
 		function GetFileHistoryEnabled: Boolean;
 
+		{Cache settings}
+		procedure SetCacheEnabled(Value: Boolean);
+		function GetCacheEnabled: Boolean;
+		procedure SetCacheTTL(Value: Integer);
+		function GetCacheTTL: Integer;
+		procedure SetCacheMaxSizeMB(Value: Integer);
+		function GetCacheMaxSizeMB: Integer;
+		procedure SetCacheDir(Value: WideString);
+		function GetCacheDir: WideString;
+		procedure SetCacheStatus(const Value: WideString);
+
 		{Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
 		function GetSelectedStreamingExtensionIndex: Integer;
@@ -424,6 +435,9 @@ type
 		procedure OnServersButtonClick;
 		procedure OnServerComboChanged;
 
+		{Cache operations}
+		procedure OnClearCacheClick;
+
 		{Translation operations}
 		procedure LoadTranslationSettingsToView;
 		procedure OnApplyTranslationClick;
@@ -438,6 +452,7 @@ implementation
 
 uses
 	CloudConstants,
+	DirectoryCache,
 	LanguageStrings,
 	SettingsConstants,
 	CipherProfile,
@@ -614,6 +629,12 @@ begin
 
 		{File history settings}
 		FView.SetFileHistoryEnabled(Settings.FileHistoryEnabled);
+
+		{Cache settings}
+		FView.SetCacheEnabled(Settings.CacheListings);
+		FView.SetCacheTTL(Settings.ListingCacheTTL);
+		FView.SetCacheMaxSizeMB(Settings.ListingCacheMaxSizeMB);
+		FView.SetCacheDir(Settings.ListingCacheDir);
 	finally
 		FGlobalSettingsUpdating := False;
 	end;
@@ -1230,6 +1251,12 @@ begin
 
 	{File history settings}
 	Settings.FileHistoryEnabled := FView.GetFileHistoryEnabled;
+
+	{Cache settings}
+	Settings.CacheListings := FView.GetCacheEnabled;
+	Settings.ListingCacheTTL := FView.GetCacheTTL;
+	Settings.ListingCacheMaxSizeMB := FView.GetCacheMaxSizeMB;
+	Settings.ListingCacheDir := FView.GetCacheDir;
 
 	{Save settings}
 	FSettingsManager.SetSettings(Settings);
@@ -1913,7 +1940,7 @@ var
 	ServerName: WideString;
 begin
 	ServerName := ComboIndexToServerName(FView.GetServerComboIndex);
-	FView.ShowTab(5); {ServersTab index}
+	FView.ShowTab(6); {ServersTab index (shifted by CacheTab insertion)}
 	SelectServerByName(ServerName);
 end;
 
@@ -1921,6 +1948,31 @@ procedure TAccountsPresenter.OnServerComboChanged;
 begin
 	{Server combo change on accounts tab is treated as a field change}
 	OnFieldChanged;
+end;
+
+{Cache operations}
+
+procedure TAccountsPresenter.OnClearCacheClick;
+var
+	Settings: TPluginSettings;
+	CacheDir: WideString;
+	Cache: IDirectoryCache;
+begin
+	Settings := FSettingsManager.GetSettings;
+	if Settings.ListingCacheDir <> '' then
+		CacheDir := IncludeTrailingPathDelimiter(Settings.ListingCacheDir)
+	else
+		CacheDir := IncludeTrailingPathDelimiter(
+			IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) + 'CloudMailRu\cache');
+
+	try
+		Cache := TDiskDirectoryCache.Create(CacheDir, 0, 0);
+		Cache.InvalidateAll;
+		FView.SetCacheStatus(DFM_CACHE_CLEARED);
+	except
+		on E: Exception do
+			FView.SetCacheStatus(Format(DFM_CACHE_CLEAR_ERROR, [E.Message]));
+	end;
 end;
 
 {Translation operations}

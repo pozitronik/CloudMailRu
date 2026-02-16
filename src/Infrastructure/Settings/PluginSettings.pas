@@ -47,6 +47,10 @@ type
 		HideTimestampFile: boolean; {Hide .cloud_timestamps from cloud directory listings}
 		SkipDescriptionDownload: boolean; {Skip downloading descript.ion files}
 		SkipTimestampDownload: boolean; {Skip downloading .cloud_timestamps files}
+		CacheListings: boolean; {Enable directory listing cache}
+		ListingCacheTTL: integer; {Cache entry TTL in seconds}
+		ListingCacheMaxSizeMB: integer; {Maximum disk space for cache in MB}
+		ListingCacheDir: WideString; {Custom cache directory, empty = auto}
 	private
 		FIniFilePath: WideString;
 		FAccountsIniFilePath: WideString;

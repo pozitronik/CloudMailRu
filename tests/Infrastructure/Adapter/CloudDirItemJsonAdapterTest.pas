@@ -121,6 +121,14 @@ type
 		procedure TestParse_FileMinimal_DefaultsApplied;
 		[Test]
 		procedure TestParse_FileNullFields_HandledGracefully;
+
+		{Roundtrip serialization tests}
+		[Test]
+		{Serialize a file item, parse back, verify all fields survive roundtrip}
+		procedure TestToJSON_File_Roundtrip;
+		[Test]
+		{Serialize a folder item with count, parse back, verify all fields survive roundtrip}
+		procedure TestToJSON_Dir_Roundtrip;
 	end;
 
 implementation
@@ -277,6 +285,79 @@ begin
 	{TSafeJSON correctly returns empty string for null JSON values}
 	Assert.AreEqual(WideString(''), Item.weblink);
 	Assert.AreEqual(WideString(''), Item.hash);
+end;
+
+procedure TCloudDirItemJsonAdapterTest.TestToJSON_File_Roundtrip;
+var
+	Original, Parsed: TCloudDirItem;
+	JSON: WideString;
+begin
+	Original := Default(TCloudDirItem);
+	Original.size := 98765;
+	Original.kind := 'file';
+	Original.weblink := 'link123';
+	Original.type_ := 'file';
+	Original.home := '/docs/report.pdf';
+	Original.name := 'report.pdf';
+	Original.grev := 5;
+	Original.rev := 3;
+	Original.mtime := 1700000000;
+	Original.virus_scan := 'pass';
+	Original.hash := 'DEADBEEF12345678';
+
+	JSON := TCloudDirItemJsonAdapter.ItemToJSON(Original);
+
+	{Parse the serialized JSON back -- ItemToJSON produces a flat object,
+	 so wrap it in the body structure that Parse expects}
+	Assert.IsTrue(TCloudDirItemJsonAdapter.Parse(
+		'{"status":200,"body":' + JSON + '}', Parsed));
+
+	Assert.AreEqual(Int64(98765), Parsed.size);
+	Assert.AreEqual(WideString('file'), Parsed.kind);
+	Assert.AreEqual(WideString('link123'), Parsed.weblink);
+	Assert.AreEqual(WideString('file'), Parsed.type_);
+	Assert.AreEqual(WideString('/docs/report.pdf'), Parsed.home);
+	Assert.AreEqual(WideString('report.pdf'), Parsed.name);
+	Assert.AreEqual(5, Parsed.grev);
+	Assert.AreEqual(3, Parsed.rev);
+	Assert.AreEqual(Int64(1700000000), Parsed.mtime);
+	Assert.AreEqual(WideString('pass'), Parsed.virus_scan);
+	Assert.AreEqual(WideString('DEADBEEF12345678'), Parsed.hash);
+end;
+
+procedure TCloudDirItemJsonAdapterTest.TestToJSON_Dir_Roundtrip;
+var
+	Original, Parsed: TCloudDirItem;
+	JSON: WideString;
+begin
+	Original := Default(TCloudDirItem);
+	Original.size := 4096;
+	Original.kind := 'folder';
+	Original.weblink := '';
+	Original.type_ := 'folder';
+	Original.home := '/photos/vacation';
+	Original.name := 'vacation';
+	Original.grev := 42;
+	Original.rev := 41;
+	Original.tree := '/photos';
+	Original.folders_count := 3;
+	Original.files_count := 17;
+
+	JSON := TCloudDirItemJsonAdapter.ItemToJSON(Original);
+
+	Assert.IsTrue(TCloudDirItemJsonAdapter.Parse(
+		'{"status":200,"body":' + JSON + '}', Parsed));
+
+	Assert.AreEqual(Int64(4096), Parsed.size);
+	Assert.AreEqual(WideString('folder'), Parsed.kind);
+	Assert.AreEqual(WideString('folder'), Parsed.type_);
+	Assert.AreEqual(WideString('/photos/vacation'), Parsed.home);
+	Assert.AreEqual(WideString('vacation'), Parsed.name);
+	Assert.AreEqual(42, Parsed.grev);
+	Assert.AreEqual(41, Parsed.rev);
+	Assert.AreEqual(WideString('/photos'), Parsed.tree);
+	Assert.AreEqual(3, Parsed.folders_count);
+	Assert.AreEqual(17, Parsed.files_count);
 end;
 
 initialization

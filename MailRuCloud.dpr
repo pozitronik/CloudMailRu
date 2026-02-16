@@ -163,6 +163,7 @@ uses
 	OperationStatusContextBuilder in 'src\Application\Operation\OperationStatusContextBuilder.pas',
 	ListingResultApplier in 'src\Application\Listing\ListingResultApplier.pas',
 	DownloadOrchestrator in 'src\Application\Download\DownloadOrchestrator.pas',
+	DirectoryCache in 'src\Application\Cache\DirectoryCache.pas',
 	CloudHashCalculator in 'src\Infrastructure\Hash\CloudHashCalculator.pas',
 	CloudShardManager in 'src\Infrastructure\Shard\CloudShardManager.pas',
 	CloudErrorMapper in 'src\Domain\Services\CloudErrorMapper.pas',

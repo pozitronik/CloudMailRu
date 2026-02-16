@@ -23,11 +23,18 @@ type
 		 @param Node The TSafeJSON node containing item data
 		 @param Item Output parameter that receives parsed data}
 		class procedure ParseFromNode(const Node: TSafeJSON; out Item: TCloudDirItem); static;
+
+		{Serializes a TCloudDirItem to compact JSON string.
+		 Uses the same NAME_* constants as parsing to ensure roundtrip fidelity.
+		 @param Item The item to serialize
+		 @return Compact JSON string}
+		class function ItemToJSON(const Item: TCloudDirItem): WideString; static;
 	end;
 
 implementation
 
 uses
+	SysUtils, JSON,
 	CloudConstants;
 
 class procedure TCloudDirItemJsonAdapter.ParseFromNode(const Node: TSafeJSON; out Item: TCloudDirItem);
@@ -91,6 +98,47 @@ begin
 		Result := True;
 	finally
 		Root.Free;
+	end;
+end;
+
+class function TCloudDirItemJsonAdapter.ItemToJSON(const Item: TCloudDirItem): WideString;
+var
+	Obj, CountObj: TJSONObject;
+begin
+	Obj := TJSONObject.Create;
+	try
+		Obj.AddPair(NAME_SIZE, TJSONNumber.Create(Item.size));
+		Obj.AddPair(NAME_KIND, Item.kind);
+		Obj.AddPair(NAME_WEBLINK, Item.weblink);
+		Obj.AddPair(NAME_TYPE, Item.type_);
+		Obj.AddPair(NAME_HOME, Item.home);
+		Obj.AddPair(NAME_NAME, Item.name);
+		Obj.AddPair(NAME_GREV, TJSONNumber.Create(Item.grev));
+		Obj.AddPair(NAME_REV, TJSONNumber.Create(Item.rev));
+
+		if Item.deleted_at <> 0 then
+			Obj.AddPair(NAME_DELETED_AT, TJSONNumber.Create(Item.deleted_at));
+		if Item.deleted_from <> '' then
+			Obj.AddPair(NAME_DELETED_FROM, Item.deleted_from);
+		if Item.deleted_by <> 0 then
+			Obj.AddPair(NAME_DELETED_BY, TJSONNumber.Create(Item.deleted_by));
+
+		if Item.type_ = TYPE_FILE then
+		begin
+			Obj.AddPair(NAME_MTIME, TJSONNumber.Create(Item.mtime));
+			Obj.AddPair(NAME_VIRUS_SCAN, Item.virus_scan);
+			Obj.AddPair(NAME_HASH, Item.hash);
+		end else begin
+			Obj.AddPair(NAME_TREE, Item.tree);
+			CountObj := TJSONObject.Create;
+			CountObj.AddPair(NAME_FOLDERS, TJSONNumber.Create(Item.folders_count));
+			CountObj.AddPair(NAME_FILES, TJSONNumber.Create(Item.files_count));
+			Obj.AddPair(NAME_COUNT, CountObj);
+		end;
+
+		Result := Obj.ToJSON;
+	finally
+		Obj.Free;
 	end;
 end;
 

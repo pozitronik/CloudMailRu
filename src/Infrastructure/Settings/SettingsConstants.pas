@@ -85,6 +85,12 @@ const
 	DEFAULT_TIMESTAMP_FILENAME = '.cloud_timestamps';
 	TIMESTAMP_TEMP_EXT = 'ts';
 
+	{Directory listing cache - reduces API calls for repeated directory navigations}
+	DEFAULT_LISTING_CACHE_ENABLED = True;
+	DEFAULT_LISTING_CACHE_TTL = 60;            {seconds}
+	DEFAULT_LISTING_CACHE_MAX_SIZE_MB = 50;    {megabytes}
+	DEFAULT_LISTING_CACHE_DIR = '';            {empty = auto (%TEMP%\CloudMailRu\cache\)}
+
 	DOT = '.'; {Just a dot, it used to trail files extensions in some situations}
 
 	TrashPostfix = '.trash';
