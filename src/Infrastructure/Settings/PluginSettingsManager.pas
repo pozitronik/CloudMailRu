@@ -286,6 +286,9 @@ begin
 	Settings.ListingCacheTTL := FConfigFile.ReadInteger('Main', 'ListingCacheTTL', DEFAULT_LISTING_CACHE_TTL);
 	Settings.ListingCacheMaxSizeMB := FConfigFile.ReadInteger('Main', 'ListingCacheMaxSizeMB', DEFAULT_LISTING_CACHE_MAX_SIZE_MB);
 	Settings.ListingCacheDir := FConfigFile.ReadString('Main', 'ListingCacheDir', DEFAULT_LISTING_CACHE_DIR);
+	Settings.FileCacheEnabled := FConfigFile.ReadBool('Main', 'FileCacheEnabled', DEFAULT_FILE_CACHE_ENABLED);
+	Settings.FileCacheTTL := FConfigFile.ReadInteger('Main', 'FileCacheTTL', DEFAULT_FILE_CACHE_TTL);
+	Settings.FileCacheMaxSizeMB := FConfigFile.ReadInteger('Main', 'FileCacheMaxSizeMB', DEFAULT_FILE_CACHE_MAX_SIZE_MB);
 	Settings.BuildThumbnailExtList;
 	Settings.IniFilePath := FIniFilePath;
 	Settings.AccountsIniFilePath := AccountsIniFilePath;
@@ -344,6 +347,9 @@ begin
 	FConfigFile.WriteIntegerIfNotDefault('Main', 'ListingCacheTTL', Settings.ListingCacheTTL, DEFAULT_LISTING_CACHE_TTL);
 	FConfigFile.WriteIntegerIfNotDefault('Main', 'ListingCacheMaxSizeMB', Settings.ListingCacheMaxSizeMB, DEFAULT_LISTING_CACHE_MAX_SIZE_MB);
 	FConfigFile.WriteStringIfNotDefault('Main', 'ListingCacheDir', Settings.ListingCacheDir, DEFAULT_LISTING_CACHE_DIR);
+	FConfigFile.WriteBoolIfNotDefault('Main', 'FileCacheEnabled', Settings.FileCacheEnabled, DEFAULT_FILE_CACHE_ENABLED);
+	FConfigFile.WriteIntegerIfNotDefault('Main', 'FileCacheTTL', Settings.FileCacheTTL, DEFAULT_FILE_CACHE_TTL);
+	FConfigFile.WriteIntegerIfNotDefault('Main', 'FileCacheMaxSizeMB', Settings.FileCacheMaxSizeMB, DEFAULT_FILE_CACHE_MAX_SIZE_MB);
 end;
 
 procedure TPluginSettingsManager.GetStreamingExtensionsList(ExtensionsList: TStrings);

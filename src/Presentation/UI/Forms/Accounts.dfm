@@ -1515,6 +1515,79 @@ object AccountsForm: TAccountsForm
           OnClick = ClearCacheButtonClick
         end
       end
+      object FileCacheSettingsGB: TGroupBox
+        Left = 0
+        Top = 210
+        Width = 701
+        Height = 170
+        Align = alTop
+        Caption = 'File content cache'
+        TabOrder = 2
+        DesignSize = (
+          701
+          170)
+        object FileCacheTTLLabel: TLabel
+          Left = 4
+          Top = 43
+          Width = 137
+          Height = 13
+          Caption = 'Cache entry TTL (seconds):'
+        end
+        object FileCacheMaxSizeLabel: TLabel
+          Left = 4
+          Top = 73
+          Width = 157
+          Height = 13
+          Caption = 'Maximum file cache size (MB):'
+        end
+        object FileCacheStatusLabel: TLabel
+          Left = 4
+          Top = 136
+          Width = 3
+          Height = 13
+        end
+        object FileCacheEnabledCB: TCheckBox
+          Left = 4
+          Top = 17
+          Width = 693
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Enable file content cache'
+          TabOrder = 0
+          OnClick = GlobalSettingsFieldChanged
+        end
+        object FileCacheTTLEdit: TSpinEdit
+          Left = 290
+          Top = 40
+          Width = 90
+          Height = 22
+          MaxValue = 86400
+          MinValue = 1
+          TabOrder = 1
+          Value = 3600
+          OnChange = GlobalSettingsFieldChanged
+        end
+        object FileCacheMaxSizeEdit: TSpinEdit
+          Left = 290
+          Top = 70
+          Width = 90
+          Height = 22
+          MaxValue = 102400
+          MinValue = 1
+          TabOrder = 2
+          Value = 500
+          OnChange = GlobalSettingsFieldChanged
+        end
+        object ClearFileCacheButton: TButton
+          Left = 4
+          Top = 100
+          Width = 150
+          Height = 25
+          Caption = 'Clear file cache'
+          TabOrder = 3
+          OnClick = ClearFileCacheButtonClick
+        end
+      end
     end
     object ServersTab: TTabSheet
       Caption = 'Servers'

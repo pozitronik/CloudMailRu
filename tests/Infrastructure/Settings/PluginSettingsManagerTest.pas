@@ -132,6 +132,21 @@ type
 
 		[Test]
 		procedure Test_Save_WritesNonDefaultCacheDir;
+
+		[Test]
+		procedure Test_FileCacheEnabled_DefaultsToTrue;
+
+		[Test]
+		procedure Test_FileCacheTTL_DefaultsTo3600;
+
+		[Test]
+		procedure Test_FileCacheMaxSizeMB_DefaultsTo500;
+
+		[Test]
+		procedure Test_Save_SkipsDefaultFileCacheSettings;
+
+		[Test]
+		procedure Test_Save_WritesNonDefaultFileCacheSettings;
 	end;
 
 	[TestFixture]
@@ -638,6 +653,69 @@ begin
 	FManager.Save;
 
 	Assert.AreEqual('D:\MyCache\CloudMailRu', FConfigFile.ReadString('Main', 'ListingCacheDir', ''));
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_FileCacheEnabled_DefaultsToTrue;
+var
+	DefaultManager: TPluginSettingsManager;
+begin
+	DefaultManager := TPluginSettingsManager.Create(TMemoryConfigFile.Create(''));
+	try
+		Assert.IsTrue(DefaultManager.Settings.FileCacheEnabled, 'FileCacheEnabled should default to True');
+	finally
+		DefaultManager.Free;
+	end;
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_FileCacheTTL_DefaultsTo3600;
+var
+	DefaultManager: TPluginSettingsManager;
+begin
+	DefaultManager := TPluginSettingsManager.Create(TMemoryConfigFile.Create(''));
+	try
+		Assert.AreEqual(3600, DefaultManager.Settings.FileCacheTTL, 'FileCacheTTL should default to 3600');
+	finally
+		DefaultManager.Free;
+	end;
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_FileCacheMaxSizeMB_DefaultsTo500;
+var
+	DefaultManager: TPluginSettingsManager;
+begin
+	DefaultManager := TPluginSettingsManager.Create(TMemoryConfigFile.Create(''));
+	try
+		Assert.AreEqual(500, DefaultManager.Settings.FileCacheMaxSizeMB, 'FileCacheMaxSizeMB should default to 500');
+	finally
+		DefaultManager.Free;
+	end;
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_Save_SkipsDefaultFileCacheSettings;
+begin
+	FManager.Settings.FileCacheEnabled := DEFAULT_FILE_CACHE_ENABLED;
+	FManager.Settings.FileCacheTTL := DEFAULT_FILE_CACHE_TTL;
+	FManager.Settings.FileCacheMaxSizeMB := DEFAULT_FILE_CACHE_MAX_SIZE_MB;
+
+	FManager.Save;
+
+	// Default values should not be written to INI
+	Assert.AreEqual('fallback', FConfigFile.ReadString('Main', 'FileCacheEnabled', 'fallback'));
+	Assert.AreEqual(999, FConfigFile.ReadInteger('Main', 'FileCacheTTL', 999));
+	Assert.AreEqual(999, FConfigFile.ReadInteger('Main', 'FileCacheMaxSizeMB', 999));
+end;
+
+procedure TPluginSettingsManagerSaveTest.Test_Save_WritesNonDefaultFileCacheSettings;
+begin
+	FManager.Settings.FileCacheEnabled := False;
+	FManager.Settings.FileCacheTTL := 7200;
+	FManager.Settings.FileCacheMaxSizeMB := 1024;
+
+	FManager.Save;
+
+	Assert.IsFalse(FConfigFile.ReadBool('Main', 'FileCacheEnabled', True));
+	Assert.AreEqual(7200, FConfigFile.ReadInteger('Main', 'FileCacheTTL', 0));
+	Assert.AreEqual(1024, FConfigFile.ReadInteger('Main', 'FileCacheMaxSizeMB', 0));
 end;
 
 {TPluginSettingsManagerStreamingTest}

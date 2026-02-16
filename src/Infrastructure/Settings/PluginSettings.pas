@@ -51,6 +51,9 @@ type
 		ListingCacheTTL: integer; {Cache entry TTL in seconds}
 		ListingCacheMaxSizeMB: integer; {Maximum disk space for cache in MB}
 		ListingCacheDir: WideString; {Custom cache directory, empty = auto}
+		FileCacheEnabled: boolean; {Enable file content cache}
+		FileCacheTTL: integer; {Cache entry TTL in seconds}
+		FileCacheMaxSizeMB: integer; {Maximum disk space for file cache in MB}
 	private
 		FIniFilePath: WideString;
 		FAccountsIniFilePath: WideString;

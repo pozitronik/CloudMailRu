@@ -162,6 +162,14 @@ type
 		CacheMaxSizeEdit: TSpinEdit;
 		CacheDirEdit: TEdit;
 		ClearCacheButton: TButton;
+		FileCacheSettingsGB: TGroupBox;
+		FileCacheTTLLabel: TLabel;
+		FileCacheMaxSizeLabel: TLabel;
+		FileCacheStatusLabel: TLabel;
+		FileCacheEnabledCB: TCheckBox;
+		FileCacheTTLEdit: TSpinEdit;
+		FileCacheMaxSizeEdit: TSpinEdit;
+		ClearFileCacheButton: TButton;
 		ServerParametersGB: TGroupBox;
 		ApiUrlLabel: TLabel;
 		OAuthUrlLabel: TLabel;
@@ -255,6 +263,7 @@ type
 		procedure ServersButtonClick(Sender: TObject);
 		procedure ApplyTranslationBtnClick(Sender: TObject);
 		procedure ClearCacheButtonClick(Sender: TObject);
+		procedure ClearFileCacheButtonClick(Sender: TObject);
     procedure TimestampModeCBChange(Sender: TObject);
 	private
 		FPresenter: TAccountsPresenter;
@@ -363,7 +372,7 @@ type
 		procedure SetFileHistoryEnabled(Value: Boolean);
 		function GetFileHistoryEnabled: Boolean;
 
-		{IAccountsView - Cache settings}
+		{IAccountsView - Listing cache settings}
 		procedure SetCacheEnabled(Value: Boolean);
 		function GetCacheEnabled: Boolean;
 		procedure SetCacheTTL(Value: Integer);
@@ -373,6 +382,15 @@ type
 		procedure SetCacheDir(Value: WideString);
 		function GetCacheDir: WideString;
 		procedure SetCacheStatus(const Value: WideString);
+
+		{IAccountsView - File cache settings}
+		procedure SetFileCacheEnabled(Value: Boolean);
+		function GetFileCacheEnabled: Boolean;
+		procedure SetFileCacheTTL(Value: Integer);
+		function GetFileCacheTTL: Integer;
+		procedure SetFileCacheMaxSizeMB(Value: Integer);
+		function GetFileCacheMaxSizeMB: Integer;
+		procedure SetFileCacheStatus(const Value: WideString);
 
 		{IAccountsView - Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -1030,6 +1048,43 @@ end;
 procedure TAccountsForm.SetCacheStatus(const Value: WideString);
 begin
 	CacheStatusLabel.Caption := Value;
+end;
+
+{IAccountsView - File cache settings}
+
+procedure TAccountsForm.SetFileCacheEnabled(Value: Boolean);
+begin
+	FileCacheEnabledCB.Checked := Value;
+end;
+
+function TAccountsForm.GetFileCacheEnabled: Boolean;
+begin
+	Result := FileCacheEnabledCB.Checked;
+end;
+
+procedure TAccountsForm.SetFileCacheTTL(Value: Integer);
+begin
+	FileCacheTTLEdit.Value := Value;
+end;
+
+function TAccountsForm.GetFileCacheTTL: Integer;
+begin
+	Result := FileCacheTTLEdit.Value;
+end;
+
+procedure TAccountsForm.SetFileCacheMaxSizeMB(Value: Integer);
+begin
+	FileCacheMaxSizeEdit.Value := Value;
+end;
+
+function TAccountsForm.GetFileCacheMaxSizeMB: Integer;
+begin
+	Result := FileCacheMaxSizeEdit.Value;
+end;
+
+procedure TAccountsForm.SetFileCacheStatus(const Value: WideString);
+begin
+	FileCacheStatusLabel.Caption := Value;
 end;
 
 {IAccountsView - Streaming extensions}
@@ -2123,6 +2178,11 @@ begin
 	CacheMaxSizeLabel.Caption := DFM_LBL_CACHE_MAX_SIZE;
 	CacheDirLabel.Caption := DFM_LBL_CACHE_DIR;
 	ClearCacheButton.Caption := DFM_BTN_CLEAR_CACHE;
+	FileCacheSettingsGB.Caption := DFM_GB_FILE_CACHE;
+	FileCacheEnabledCB.Caption := DFM_CB_FILE_CACHE_ENABLED;
+	FileCacheTTLLabel.Caption := DFM_LBL_FILE_CACHE_TTL;
+	FileCacheMaxSizeLabel.Caption := DFM_LBL_FILE_CACHE_MAX_SIZE;
+	ClearFileCacheButton.Caption := DFM_BTN_CLEAR_FILE_CACHE;
 
 	{Servers tab}
 	ServersTab.Caption := DFM_TAB_SERVERS;
@@ -2174,6 +2234,11 @@ end;
 procedure TAccountsForm.ClearCacheButtonClick(Sender: TObject);
 begin
 	FPresenter.OnClearCacheClick;
+end;
+
+procedure TAccountsForm.ClearFileCacheButtonClick(Sender: TObject);
+begin
+	FPresenter.OnClearFileCacheClick;
 end;
 
 {IAccountsView - Dialogs}

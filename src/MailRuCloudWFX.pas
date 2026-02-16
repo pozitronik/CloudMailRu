@@ -97,6 +97,7 @@ uses
 	ListingResultApplier,
 	DownloadOrchestrator,
 	DirectoryCache,
+	FileCache,
 	CloudMailRuFactory,
 	OpenSSLProvider,
 	SSLHandlerFactory,
@@ -163,6 +164,7 @@ type
 		FListingResultApplier: IListingResultApplier;
 		FDownloadOrchestrator: IDownloadOrchestrator;
 		FDirectoryCache: IDirectoryCache;
+		FFileCache: IFileCache;
 		FTCHandler: ITCHandler;
 		FOpenSSLProvider: IOpenSSLProvider;
 		FSSLHandlerFactory: ISSLHandlerFactory;
@@ -379,6 +381,14 @@ begin
 	else
 		FDirectoryCache := TNullDirectoryCache.Create;
 
+	if SettingsManager.GetSettings.FileCacheEnabled then
+		FFileCache := TDiskFileCache.Create(
+			ResolveCacheDir(SettingsManager.GetSettings) + 'files\',
+			SettingsManager.GetSettings.FileCacheTTL,
+			SettingsManager.GetSettings.FileCacheMaxSizeMB)
+	else
+		FFileCache := TNullFileCache.Create;
+
 	FFileSystem := TWindowsFileSystem.Create;
 	FTCHandler := TTCHandler.Create(TWindowsEnvironment.Create);
 	FDescriptionSync := TDescriptionSyncManager.Create(SettingsManager.GetSettings.DescriptionFileName, FFileSystem, FTCHandler);
@@ -538,6 +548,7 @@ begin
 	FListingResultApplier := nil;
 	FDownloadOrchestrator := nil;
 	FDirectoryCache := nil;
+	FFileCache := nil;
 	FTCHandler := nil;
 	ConnectionManager := nil;
 	FOpenSSLProvider := nil;
@@ -1234,27 +1245,46 @@ var
 	Cloud: TCloudMailRu;
 	resultHash: WideString;
 	DownloadContext: TDownloadContext;
+	Item: TCloudDirItem;
 begin
 	if (SettingsManager.GetSettings.CheckCRC) then
 		resultHash := EmptyWideStr
 	else
-		resultHash := 'dummy'; {Calculations will be ignored if variable is not empty}
+		resultHash := 'dummy'; // Calculations will be ignored if variable is not empty
 	Cloud := ConnectionManager.Get(RemotePath.account);
 	if not EnsureAuthorized(Cloud) then
 		exit(FS_FILE_NOTSUPPORTED);
+
+	// Try serving from file cache before downloading
+	Item := FindListingItemByPath(CurrentListing, RemotePath);
+	if (Item.hash <> '') and FFileCache.TryGet(Item.hash, LocalName) then
+	begin
+		DownloadContext.RemotePath := RemotePath;
+		DownloadContext.LocalName := LocalName;
+		DownloadContext.RemoteName := RemoteName;
+		DownloadContext.CopyFlags := CopyFlags;
+		DownloadContext.resultHash := Item.hash;
+		DownloadContext.Item := Item;
+		DownloadContext.Cloud := Cloud;
+		Exit(FDownloadSuccessHandler.HandleSuccess(DownloadContext));
+	end;
 
 	Result := Cloud.Downloader.Download(WideString(RemotePath.Path), LocalName, resultHash);
 
 	if Result = FS_FILE_OK then
 	begin
-		{Build context and delegate to success handler}
 		DownloadContext.RemotePath := RemotePath;
 		DownloadContext.LocalName := LocalName;
 		DownloadContext.RemoteName := RemoteName;
 		DownloadContext.CopyFlags := CopyFlags;
 		DownloadContext.resultHash := resultHash;
-		DownloadContext.Item := FindListingItemByPath(CurrentListing, RemotePath);
+		DownloadContext.Item := Item;
 		DownloadContext.Cloud := Cloud;
+
+		// Cache the downloaded file for future requests
+		if (resultHash <> '') and (resultHash <> 'dummy') then
+			FFileCache.Put(resultHash, LocalName);
+
 		Result := FDownloadSuccessHandler.HandleSuccess(DownloadContext);
 	end;
 end;

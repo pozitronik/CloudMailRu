@@ -164,6 +164,7 @@ uses
 	ListingResultApplier in 'src\Application\Listing\ListingResultApplier.pas',
 	DownloadOrchestrator in 'src\Application\Download\DownloadOrchestrator.pas',
 	DirectoryCache in 'src\Application\Cache\DirectoryCache.pas',
+	FileCache in 'src\Application\Cache\FileCache.pas',
 	CloudHashCalculator in 'src\Infrastructure\Hash\CloudHashCalculator.pas',
 	CloudShardManager in 'src\Infrastructure\Shard\CloudShardManager.pas',
 	CloudErrorMapper in 'src\Domain\Services\CloudErrorMapper.pas',

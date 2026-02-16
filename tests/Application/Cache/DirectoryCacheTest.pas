@@ -94,7 +94,7 @@ type
 implementation
 
 uses
-	Windows, IOUtils;
+	IOUtils;
 
 {TDiskDirectoryCacheTest}
 

@@ -458,6 +458,13 @@ DFM_LBL_CACHE_DIR="Cache directory (empty = auto):"
 DFM_BTN_CLEAR_CACHE="Clear cache now"
 DFM_CACHE_CLEARED="Cache cleared successfully"
 DFM_CACHE_CLEAR_ERROR="Error clearing cache: %s"
+DFM_GB_FILE_CACHE="File content cache"
+DFM_CB_FILE_CACHE_ENABLED="Enable file content cache"
+DFM_LBL_FILE_CACHE_TTL="Cache entry TTL (seconds):"
+DFM_LBL_FILE_CACHE_MAX_SIZE="Maximum file cache size (MB):"
+DFM_BTN_CLEAR_FILE_CACHE="Clear file cache"
+DFM_FILE_CACHE_CLEARED="File cache cleared successfully"
+DFM_FILE_CACHE_CLEAR_ERROR="Error clearing file cache: %s"
 
 # Content field
 CONTENT_FIELD_DISABLED="<disabled>"

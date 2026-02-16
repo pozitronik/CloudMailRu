@@ -91,6 +91,11 @@ const
 	DEFAULT_LISTING_CACHE_MAX_SIZE_MB = 50;    {megabytes}
 	DEFAULT_LISTING_CACHE_DIR = '';            {empty = auto (%TEMP%\CloudMailRu\cache\)}
 
+	{File content cache - avoids re-downloading unchanged files}
+	DEFAULT_FILE_CACHE_ENABLED = True;
+	DEFAULT_FILE_CACHE_TTL = 3600;            {seconds, 1 hour}
+	DEFAULT_FILE_CACHE_MAX_SIZE_MB = 500;     {megabytes}
+
 	DOT = '.'; {Just a dot, it used to trail files extensions in some situations}
 
 	TrashPostfix = '.trash';

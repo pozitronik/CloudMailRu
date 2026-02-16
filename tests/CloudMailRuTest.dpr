@@ -309,6 +309,8 @@ uses
 	DownloadOrchestratorTest in 'Application\Download\DownloadOrchestratorTest.pas',
 	DirectoryCache in '..\src\Application\Cache\DirectoryCache.pas',
 	DirectoryCacheTest in 'Application\Cache\DirectoryCacheTest.pas',
+	FileCache in '..\src\Application\Cache\FileCache.pas',
+	FileCacheTest in 'Application\Cache\FileCacheTest.pas',
 	CloudHashCalculator in '..\src\Infrastructure\Hash\CloudHashCalculator.pas',
 	CloudHashCalculatorTest in 'Infrastructure\Hash\CloudHashCalculatorTest.pas',
 	CloudShardManager in '..\src\Infrastructure\Shard\CloudShardManager.pas',

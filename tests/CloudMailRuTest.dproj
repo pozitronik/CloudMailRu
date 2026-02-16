@@ -407,6 +407,8 @@
         <DCCReference Include="Application\Download\DownloadOrchestratorTest.pas"/>
         <DCCReference Include="..\src\Application\Cache\DirectoryCache.pas"/>
         <DCCReference Include="Application\Cache\DirectoryCacheTest.pas"/>
+        <DCCReference Include="..\src\Application\Cache\FileCache.pas"/>
+        <DCCReference Include="Application\Cache\FileCacheTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Hash\CloudHashCalculator.pas"/>
         <DCCReference Include="Infrastructure\Hash\CloudHashCalculatorTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Shard\CloudShardManager.pas"/>

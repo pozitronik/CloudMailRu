@@ -153,7 +153,7 @@ type
 		procedure SetFileHistoryEnabled(Value: Boolean);
 		function GetFileHistoryEnabled: Boolean;
 
-		{Cache settings}
+		{Listing cache settings}
 		procedure SetCacheEnabled(Value: Boolean);
 		function GetCacheEnabled: Boolean;
 		procedure SetCacheTTL(Value: Integer);
@@ -163,6 +163,15 @@ type
 		procedure SetCacheDir(Value: WideString);
 		function GetCacheDir: WideString;
 		procedure SetCacheStatus(const Value: WideString);
+
+		{File cache settings}
+		procedure SetFileCacheEnabled(Value: Boolean);
+		function GetFileCacheEnabled: Boolean;
+		procedure SetFileCacheTTL(Value: Integer);
+		function GetFileCacheTTL: Integer;
+		procedure SetFileCacheMaxSizeMB(Value: Integer);
+		function GetFileCacheMaxSizeMB: Integer;
+		procedure SetFileCacheStatus(const Value: WideString);
 
 		{Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -437,6 +446,7 @@ type
 
 		{Cache operations}
 		procedure OnClearCacheClick;
+		procedure OnClearFileCacheClick;
 
 		{Translation operations}
 		procedure LoadTranslationSettingsToView;
@@ -453,6 +463,7 @@ implementation
 uses
 	CloudConstants,
 	DirectoryCache,
+	FileCache,
 	LanguageStrings,
 	SettingsConstants,
 	CipherProfile,
@@ -630,11 +641,16 @@ begin
 		{File history settings}
 		FView.SetFileHistoryEnabled(Settings.FileHistoryEnabled);
 
-		{Cache settings}
+		{Listing cache settings}
 		FView.SetCacheEnabled(Settings.CacheListings);
 		FView.SetCacheTTL(Settings.ListingCacheTTL);
 		FView.SetCacheMaxSizeMB(Settings.ListingCacheMaxSizeMB);
 		FView.SetCacheDir(Settings.ListingCacheDir);
+
+		{File cache settings}
+		FView.SetFileCacheEnabled(Settings.FileCacheEnabled);
+		FView.SetFileCacheTTL(Settings.FileCacheTTL);
+		FView.SetFileCacheMaxSizeMB(Settings.FileCacheMaxSizeMB);
 	finally
 		FGlobalSettingsUpdating := False;
 	end;
@@ -1252,11 +1268,16 @@ begin
 	{File history settings}
 	Settings.FileHistoryEnabled := FView.GetFileHistoryEnabled;
 
-	{Cache settings}
+	{Listing cache settings}
 	Settings.CacheListings := FView.GetCacheEnabled;
 	Settings.ListingCacheTTL := FView.GetCacheTTL;
 	Settings.ListingCacheMaxSizeMB := FView.GetCacheMaxSizeMB;
 	Settings.ListingCacheDir := FView.GetCacheDir;
+
+	{File cache settings}
+	Settings.FileCacheEnabled := FView.GetFileCacheEnabled;
+	Settings.FileCacheTTL := FView.GetFileCacheTTL;
+	Settings.FileCacheMaxSizeMB := FView.GetFileCacheMaxSizeMB;
 
 	{Save settings}
 	FSettingsManager.SetSettings(Settings);
@@ -1972,6 +1993,29 @@ begin
 	except
 		on E: Exception do
 			FView.SetCacheStatus(Format(DFM_CACHE_CLEAR_ERROR, [E.Message]));
+	end;
+end;
+
+procedure TAccountsPresenter.OnClearFileCacheClick;
+var
+	Settings: TPluginSettings;
+	CacheDir: WideString;
+	Cache: IFileCache;
+begin
+	Settings := FSettingsManager.GetSettings;
+	if Settings.ListingCacheDir <> '' then
+		CacheDir := IncludeTrailingPathDelimiter(Settings.ListingCacheDir)
+	else
+		CacheDir := IncludeTrailingPathDelimiter(
+			IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) + 'CloudMailRu\cache');
+
+	try
+		Cache := TDiskFileCache.Create(CacheDir + 'files\', 0, 0);
+		Cache.InvalidateAll;
+		FView.SetFileCacheStatus(DFM_FILE_CACHE_CLEARED);
+	except
+		on E: Exception do
+			FView.SetFileCacheStatus(Format(DFM_FILE_CACHE_CLEAR_ERROR, [E.Message]));
 	end;
 end;
 

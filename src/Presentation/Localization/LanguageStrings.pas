@@ -465,6 +465,13 @@ var
 	DFM_BTN_CLEAR_CACHE: WideString;
 	DFM_CACHE_CLEARED: WideString;
 	DFM_CACHE_CLEAR_ERROR: WideString;
+	DFM_GB_FILE_CACHE: WideString;
+	DFM_CB_FILE_CACHE_ENABLED: WideString;
+	DFM_LBL_FILE_CACHE_TTL: WideString;
+	DFM_LBL_FILE_CACHE_MAX_SIZE: WideString;
+	DFM_BTN_CLEAR_FILE_CACHE: WideString;
+	DFM_FILE_CACHE_CLEARED: WideString;
+	DFM_FILE_CACHE_CLEAR_ERROR: WideString;
 
 	{Content field}
 	CONTENT_FIELD_DISABLED: WideString;
@@ -933,6 +940,13 @@ begin
 	DFM_BTN_CLEAR_CACHE := 'Clear cache now';
 	DFM_CACHE_CLEARED := 'Cache cleared successfully';
 	DFM_CACHE_CLEAR_ERROR := 'Error clearing cache: %s';
+	DFM_GB_FILE_CACHE := 'File content cache';
+	DFM_CB_FILE_CACHE_ENABLED := 'Enable file content cache';
+	DFM_LBL_FILE_CACHE_TTL := 'Cache entry TTL (seconds):';
+	DFM_LBL_FILE_CACHE_MAX_SIZE := 'Maximum file cache size (MB):';
+	DFM_BTN_CLEAR_FILE_CACHE := 'Clear file cache';
+	DFM_FILE_CACHE_CLEARED := 'File cache cleared successfully';
+	DFM_FILE_CACHE_CLEAR_ERROR := 'Error clearing file cache: %s';
 
 	CONTENT_FIELD_DISABLED := '<disabled>';
 end;
@@ -1382,6 +1396,13 @@ begin
 	TranslationRegistry.Add('DFM_BTN_CLEAR_CACHE', @DFM_BTN_CLEAR_CACHE);
 	TranslationRegistry.Add('DFM_CACHE_CLEARED', @DFM_CACHE_CLEARED);
 	TranslationRegistry.Add('DFM_CACHE_CLEAR_ERROR', @DFM_CACHE_CLEAR_ERROR);
+	TranslationRegistry.Add('DFM_GB_FILE_CACHE', @DFM_GB_FILE_CACHE);
+	TranslationRegistry.Add('DFM_CB_FILE_CACHE_ENABLED', @DFM_CB_FILE_CACHE_ENABLED);
+	TranslationRegistry.Add('DFM_LBL_FILE_CACHE_TTL', @DFM_LBL_FILE_CACHE_TTL);
+	TranslationRegistry.Add('DFM_LBL_FILE_CACHE_MAX_SIZE', @DFM_LBL_FILE_CACHE_MAX_SIZE);
+	TranslationRegistry.Add('DFM_BTN_CLEAR_FILE_CACHE', @DFM_BTN_CLEAR_FILE_CACHE);
+	TranslationRegistry.Add('DFM_FILE_CACHE_CLEARED', @DFM_FILE_CACHE_CLEARED);
+	TranslationRegistry.Add('DFM_FILE_CACHE_CLEAR_ERROR', @DFM_FILE_CACHE_CLEAR_ERROR);
 
 	TranslationRegistry.Add('CONTENT_FIELD_DISABLED', @CONTENT_FIELD_DISABLED);
 end;

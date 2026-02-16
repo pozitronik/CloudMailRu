@@ -353,6 +353,7 @@
         <DCCReference Include="src\Application\Listing\ListingResultApplier.pas"/>
         <DCCReference Include="src\Application\Download\DownloadOrchestrator.pas"/>
         <DCCReference Include="src\Application\Cache\DirectoryCache.pas"/>
+        <DCCReference Include="src\Application\Cache\FileCache.pas"/>
         <DCCReference Include="src\Infrastructure\Hash\CloudHashCalculator.pas"/>
         <DCCReference Include="src\Infrastructure\Shard\CloudShardManager.pas"/>
         <DCCReference Include="src\Domain\Services\CloudErrorMapper.pas"/>
