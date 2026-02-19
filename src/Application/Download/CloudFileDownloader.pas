@@ -202,6 +202,20 @@ begin
 					Continue;
 				end;
 
+				{Handle shard connection error - try another shard}
+				if Result in [FS_FILE_NOTSUPPORTED] then
+				begin
+					FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, '%s%s', [PREFIX_REDIRECTION_LIMIT, URL]);
+					if (FRequest.Request(RT_MsgYesNo, REDIRECTION_LIMIT, TRY_ANOTHER_SHARD, EmptyWideStr, 0)) and
+						(FShardManager.ResolveShard(DownloadShard, SHARD_TYPE_GET)) then
+					begin
+						FShardManager.SetDownloadShard(DownloadShard);
+						FileStream.Size := 0; {Reset stream for retry}
+						NeedRetry := True;
+						Continue;
+					end;
+				end;
+
 				if ((Result in [FS_FILE_OK]) and (EmptyWideStr = ResultHash)) then
 					ResultHash := FHashCalculator.CalculateHash(FileStream, CALCULATING_HASH);
 			end;

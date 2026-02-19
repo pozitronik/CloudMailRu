@@ -150,6 +150,8 @@ type
 		{Download tests - shard failover on redirect limit}
 		[Test]
 		procedure TestDownload_Encrypted_ShardRedirectLimit_RetriesWithNewShard;
+		[Test]
+		procedure TestDownload_Unencrypted_ShardRedirectLimit_RetriesWithNewShard;
 	end;
 
 implementation
@@ -887,6 +889,33 @@ begin
 	Assert.IsTrue(TFile.Exists(LocalPath), 'File should be created');
 	WrittenContent := TFile.ReadAllText(LocalPath, TEncoding.UTF8);
 	Assert.AreEqual('Shard retry content', WrittenContent, 'Content should match after shard switch');
+end;
+
+procedure TCloudFileDownloaderTest.TestDownload_Unencrypted_ShardRedirectLimit_RetriesWithNewShard;
+var
+	LocalPath: string;
+	ResultHash: WideString;
+	DownloadResult: Integer;
+	FileContent: TBytes;
+	WrittenContent: string;
+begin
+	FMockContext.SetIsPublicAccount(False);
+	LocalPath := GetTempFilePath('shard_retry_unenc_test.txt');
+
+	{Create unencrypted downloader with mock request that confirms shard switch}
+	CreateDownloader(False, nil, TMockAcceptRequest.Create);
+
+	{First attempt returns FS_FILE_NOTSUPPORTED (redirect limit), second succeeds with new shard}
+	FMockHTTP.QueueStreamResponse('download.shard', nil, FS_FILE_NOTSUPPORTED);
+	FileContent := TEncoding.UTF8.GetBytes('Shard retry unencrypted content');
+	FMockHTTP.SetStreamResponse('requested.shard', FileContent, FS_FILE_OK);
+
+	DownloadResult := FDownloader.Download('/remote/file.txt', LocalPath, ResultHash);
+
+	Assert.AreEqual(FS_FILE_OK, DownloadResult, 'Should succeed after shard failover (unencrypted)');
+	Assert.IsTrue(TFile.Exists(LocalPath), 'File should be created');
+	WrittenContent := TFile.ReadAllText(LocalPath, TEncoding.UTF8);
+	Assert.AreEqual('Shard retry unencrypted content', WrittenContent, 'Content should match after shard switch');
 end;
 
 initialization
