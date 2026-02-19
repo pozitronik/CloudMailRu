@@ -285,7 +285,9 @@ var
 	Bytes: TBytes;
 begin
 	Hash := PathToHash(Path);
-	JSON := TCloudDirItemListJsonAdapter.ToJSON(Listing);
+	// ToJSON produces the body content: {"list":[...]}
+	// Wrap in {"body":...} envelope for Parse compatibility
+	JSON := '{"body":' + TCloudDirItemListJsonAdapter.ToJSON(Listing) + '}';
 	Bytes := TEncoding.UTF8.GetBytes(JSON);
 	FLock.Enter;
 	try
