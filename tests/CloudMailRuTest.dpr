@@ -307,6 +307,8 @@ uses
 	ListingResultApplierTest in 'Application\Listing\ListingResultApplierTest.pas',
 	DownloadOrchestrator in '..\src\Application\Download\DownloadOrchestrator.pas',
 	DownloadOrchestratorTest in 'Application\Download\DownloadOrchestratorTest.pas',
+	BaseDiskCache in '..\src\Application\Cache\BaseDiskCache.pas',
+	BaseDiskCacheTest in 'Application\Cache\BaseDiskCacheTest.pas',
 	DirectoryCache in '..\src\Application\Cache\DirectoryCache.pas',
 	DirectoryCacheTest in 'Application\Cache\DirectoryCacheTest.pas',
 	FileCache in '..\src\Application\Cache\FileCache.pas',

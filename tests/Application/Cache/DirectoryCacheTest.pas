@@ -53,10 +53,6 @@ type
 		procedure Test_InvalidateAll_ClearsAll;
 
 		[Test]
-		{InvalidateAll on empty cache completes without error}
-		procedure Test_InvalidateAll_EmptyCache_NoError;
-
-		[Test]
 		{TryGet returns a copy -- modifying returned array does not affect cache}
 		procedure Test_TryGet_ReturnsCopy;
 
@@ -77,10 +73,6 @@ type
 		procedure Test_Put_CreatesSidecarFiles;
 
 		[Test]
-		{Size eviction: oldest entries are evicted when over MaxSizeMB limit}
-		procedure Test_SizeEviction_RemovesOldestEntries;
-
-		[Test]
 		{TryGet with missing .json but existing .meta cleans up orphaned meta}
 		procedure Test_TryGet_MissingDataFile_CleansUpMeta;
 
@@ -95,18 +87,6 @@ type
 		[Test]
 		{PutThenGet preserves all TCloudDirItem fields through serialization}
 		procedure Test_PutThenGet_PreservesAllFields;
-
-		[Test]
-		{Eviction stops mid-loop once total drops below limit (Break path)}
-		procedure Test_SizeEviction_BreaksMidLoop;
-
-		[Test]
-		{Eviction skips entries whose .meta is corrupt (ReadMeta returns False)}
-		procedure Test_SizeEviction_SkipsCorruptMeta;
-
-		[Test]
-		{Eviction comparator handles entries with identical ExpiresAt}
-		procedure Test_SizeEviction_SameExpiresAt;
 	end;
 
 	[TestFixture]
@@ -290,13 +270,6 @@ begin
 	Assert.IsFalse(FCache.TryGet('\account\dir3', Retrieved));
 end;
 
-procedure TDiskDirectoryCacheTest.Test_InvalidateAll_EmptyCache_NoError;
-begin
-	{Should not raise on a cache with no entries}
-	FCache.InvalidateAll;
-	Assert.Pass('InvalidateAll on empty cache should not raise');
-end;
-
 procedure TDiskDirectoryCacheTest.Test_TryGet_ReturnsCopy;
 var
 	Original, Retrieved1, Retrieved2: TCloudDirItemList;
@@ -375,37 +348,6 @@ begin
 
 	Assert.AreEqual(1, JsonCount, 'Should have one .json file');
 	Assert.AreEqual(1, MetaCount, 'Should have one .meta file');
-end;
-
-procedure TDiskDirectoryCacheTest.Test_SizeEviction_RemovesOldestEntries;
-var
-	SmallCache: TDiskDirectoryCache;
-	SmallCacheDir: WideString;
-	GUID: TGUID;
-	Listing, Retrieved: TCloudDirItemList;
-	I: Integer;
-begin
-	{Create a cache with very small max size (1 KB) to trigger eviction quickly}
-	CreateGUID(GUID);
-	SmallCacheDir := IncludeTrailingPathDelimiter(TPath.GetTempPath) + 'CloudMailRuCacheTest_Evict_' + GUIDToString(GUID);
-	{MaxSizeMB=0 would not work, use a trick: create with 1 MB max then fill beyond}
-	SmallCache := TDiskDirectoryCache.Create(SmallCacheDir, 3600, 1);
-	try
-		{Put several large listings to exceed 1 MB total}
-		for I := 1 to 10 do
-		begin
-			Listing := MakeListing(500); {Each listing serializes to several KB}
-			SmallCache.Put('\bigdir' + IntToStr(I), Listing);
-			Sleep(20); {Ensure distinct ExpiresAt for eviction ordering}
-		end;
-
-		{After eviction, earliest entries should be gone while latest should remain}
-		Assert.IsTrue(SmallCache.TryGet('\bigdir10', Retrieved), 'Most recent entry should survive eviction');
-	finally
-		SmallCache.Free;
-		if DirectoryExists(SmallCacheDir) then
-			TDirectory.Delete(SmallCacheDir, True);
-	end;
 end;
 
 procedure TDiskDirectoryCacheTest.Test_TryGet_MissingDataFile_CleansUpMeta;
@@ -524,165 +466,6 @@ begin
 	Assert.AreEqual(WideString('/docs'), Retrieved[1].tree);
 	Assert.AreEqual(3, Retrieved[1].folders_count);
 	Assert.AreEqual(15, Retrieved[1].files_count);
-end;
-
-procedure TDiskDirectoryCacheTest.Test_SizeEviction_BreaksMidLoop;
-var
-	TinyCache: TDiskDirectoryCache;
-	TinyCacheDir, CDir: WideString;
-	GUID: TGUID;
-	Listing, Retrieved: TCloudDirItemList;
-	I: Integer;
-	SurvivedCount: Integer;
-begin
-	// Create cache with 1 MB limit, add entries that collectively exceed it,
-	// but not all entries need to be evicted to get back under the limit.
-	// This exercises the Break path at line 232-233 of EvictIfOverSize.
-	CreateGUID(GUID);
-	TinyCacheDir := IncludeTrailingPathDelimiter(TPath.GetTempPath) + 'CloudMailRuCacheTest_MidLoop_' + GUIDToString(GUID);
-	TinyCache := TDiskDirectoryCache.Create(TinyCacheDir, 3600, 1);
-	try
-		// Put 20 listings with 500 items each (~20-30KB each); total > 1 MB
-		for I := 1 to 20 do
-		begin
-			Listing := MakeListing(500);
-			TinyCache.Put('\dir' + IntToStr(I), Listing);
-			Sleep(15); // ensure distinct ExpiresAt ordering
-		end;
-
-		// After eviction, some entries should survive (Break mid-loop),
-		// while earliest should be gone
-		SurvivedCount := 0;
-		for I := 1 to 20 do
-		begin
-			if TinyCache.TryGet('\dir' + IntToStr(I), Retrieved) then
-				Inc(SurvivedCount);
-		end;
-
-		Assert.IsTrue(SurvivedCount > 0, 'Some entries should survive eviction');
-		Assert.IsTrue(SurvivedCount < 20, 'Not all entries should survive -- some must be evicted');
-		// Most recent entry should definitely survive
-		Assert.IsTrue(TinyCache.TryGet('\dir20', Retrieved), 'Most recent entry should survive');
-	finally
-		TinyCache.Free;
-		if DirectoryExists(TinyCacheDir) then
-			TDirectory.Delete(TinyCacheDir, True);
-	end;
-end;
-
-procedure TDiskDirectoryCacheTest.Test_SizeEviction_SkipsCorruptMeta;
-var
-	TinyCache: TDiskDirectoryCache;
-	TinyCacheDir, CDir, Hash: WideString;
-	GUID: TGUID;
-	Listing, Retrieved: TCloudDirItemList;
-	Writer: TStreamWriter;
-	I: Integer;
-begin
-	// Create cache, add entries that exceed the limit.
-	// Corrupt one .meta file so ReadMeta returns False during eviction scan.
-	// Eviction should skip the corrupt entry and still evict valid old entries.
-	CreateGUID(GUID);
-	TinyCacheDir := IncludeTrailingPathDelimiter(TPath.GetTempPath) + 'CloudMailRuCacheTest_CorruptEvict_' + GUIDToString(GUID);
-	TinyCache := TDiskDirectoryCache.Create(TinyCacheDir, 3600, 1);
-	try
-		CDir := IncludeTrailingPathDelimiter(TinyCacheDir);
-
-		// Put several entries to fill cache
-		for I := 1 to 15 do
-		begin
-			Listing := MakeListing(500);
-			TinyCache.Put('\evdir' + IntToStr(I), Listing);
-			Sleep(15);
-		end;
-
-		// Corrupt the meta for one of the middle entries (no Path= line)
-		Hash := HashForPath('\evdir8');
-		Writer := TStreamWriter.Create(CDir + Hash + '.meta', False, TEncoding.UTF8);
-		try
-			Writer.Write('SomeGarbage=value' + sLineBreak + 'MoreGarbage=123');
-		finally
-			Writer.Free;
-		end;
-
-		// Add one more entry to trigger eviction again
-		Listing := MakeListing(500);
-		TinyCache.Put('\evdir_final', Listing);
-
-		// The final entry should survive eviction
-		Assert.IsTrue(TinyCache.TryGet('\evdir_final', Retrieved),
-			'Final entry should survive eviction even with corrupt meta in the mix');
-	finally
-		TinyCache.Free;
-		if DirectoryExists(TinyCacheDir) then
-			TDirectory.Delete(TinyCacheDir, True);
-	end;
-end;
-
-procedure TDiskDirectoryCacheTest.Test_SizeEviction_SameExpiresAt;
-var
-	TinyCache: TDiskDirectoryCache;
-	TinyCacheDir, CDir, Hash: WideString;
-	GUID: TGUID;
-	Listing, Retrieved: TCloudDirItemList;
-	Writer: TStreamWriter;
-	MetaLines: TStringList;
-	SharedExpiry: string;
-	I: Integer;
-	SurvivedCount: Integer;
-begin
-	// Create entries with identical ExpiresAt to exercise the comparator Result := 0 branch.
-	// We manually write meta files with the same ExpiresAt value.
-	CreateGUID(GUID);
-	TinyCacheDir := IncludeTrailingPathDelimiter(TPath.GetTempPath) + 'CloudMailRuCacheTest_SameExpiry_' + GUIDToString(GUID);
-	TinyCache := TDiskDirectoryCache.Create(TinyCacheDir, 3600, 1);
-	try
-		CDir := IncludeTrailingPathDelimiter(TinyCacheDir);
-		SharedExpiry := FloatToStr(Now + 3600 / SecsPerDay);
-
-		// Put entries normally first (to create .json files)
-		for I := 1 to 15 do
-		begin
-			Listing := MakeListing(500);
-			TinyCache.Put('\samedir' + IntToStr(I), Listing);
-		end;
-
-		// Overwrite all .meta files with identical ExpiresAt
-		for I := 1 to 15 do
-		begin
-			Hash := HashForPath('\samedir' + IntToStr(I));
-			MetaLines := TStringList.Create;
-			try
-				MetaLines.Add('Path=' + WideLowerCase('\samedir' + IntToStr(I)));
-				MetaLines.Add('ExpiresAt=' + SharedExpiry);
-				MetaLines.Add('DataSize=30000');
-				MetaLines.SaveToFile(CDir + Hash + '.meta', TEncoding.UTF8);
-			finally
-				MetaLines.Free;
-			end;
-		end;
-
-		// Add one more entry to trigger eviction (this one gets a new ExpiresAt)
-		Listing := MakeListing(500);
-		TinyCache.Put('\samedir_trigger', Listing);
-
-		// Eviction should work without errors even when all ExpiresAt are equal
-		// At least the trigger entry should survive
-		SurvivedCount := 0;
-		for I := 1 to 15 do
-		begin
-			if TinyCache.TryGet('\samedir' + IntToStr(I), Retrieved) then
-				Inc(SurvivedCount);
-		end;
-		Assert.IsTrue(SurvivedCount < 15,
-			'Some entries with same ExpiresAt should be evicted');
-		Assert.IsTrue(TinyCache.TryGet('\samedir_trigger', Retrieved),
-			'Trigger entry should survive');
-	finally
-		TinyCache.Free;
-		if DirectoryExists(TinyCacheDir) then
-			TDirectory.Delete(TinyCacheDir, True);
-	end;
 end;
 
 {TNullDirectoryCacheTest}

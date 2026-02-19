@@ -405,6 +405,8 @@
         <DCCReference Include="Application\Listing\ListingResultApplierTest.pas"/>
         <DCCReference Include="..\src\Application\Download\DownloadOrchestrator.pas"/>
         <DCCReference Include="Application\Download\DownloadOrchestratorTest.pas"/>
+        <DCCReference Include="..\src\Application\Cache\BaseDiskCache.pas"/>
+        <DCCReference Include="Application\Cache\BaseDiskCacheTest.pas"/>
         <DCCReference Include="..\src\Application\Cache\DirectoryCache.pas"/>
         <DCCReference Include="Application\Cache\DirectoryCacheTest.pas"/>
         <DCCReference Include="..\src\Application\Cache\FileCache.pas"/>

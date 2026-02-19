@@ -9,7 +9,8 @@ unit DirectoryCache;
 interface
 
 uses
-	SysUtils, SyncObjs,
+	SysUtils,
+	BaseDiskCache,
 	CloudDirItemList;
 
 type
@@ -26,26 +27,15 @@ type
 		procedure InvalidateAll;
 	end;
 
-	TDiskDirectoryCache = class(TInterfacedObject, IDirectoryCache)
+	TDiskDirectoryCache = class(TBaseDiskCache, IDirectoryCache)
 	private
-		FLock: TCriticalSection;
-		FCacheDir: WideString;
-		FTTLSeconds: Integer;
-		FMaxSizeBytes: Int64;
-
 		function NormalizePath(const Path: WideString): WideString;
 		function PathToHash(const Path: WideString): WideString;
-		function DataFilePath(const Hash: WideString): WideString;
-		function MetaFilePath(const Hash: WideString): WideString;
 		procedure WriteMeta(const Hash, Path: WideString; DataSize: Int64);
 		function ReadMeta(const Hash: WideString; out Path: WideString; out ExpiresAt: TDateTime; out DataSize: Int64): Boolean;
-		procedure EvictIfOverSize;
-		procedure DeleteEntry(const Hash: WideString);
-		function GetTotalCacheSize: Int64;
+	protected
+		function GetDataFileExtension: WideString; override;
 	public
-		constructor Create(const CacheDir: WideString; TTLSeconds: Integer; MaxSizeMB: Integer);
-		destructor Destroy; override;
-
 		function TryGet(const Path: WideString; out Listing: TCloudDirItemList): Boolean;
 		procedure Put(const Path: WideString; const Listing: TCloudDirItemList);
 		procedure InvalidatePath(const Path: WideString);
@@ -64,33 +54,14 @@ type
 implementation
 
 uses
-	Classes, IOUtils, DateUtils, System.Hash, Generics.Collections, Generics.Defaults,
+	Classes, IOUtils, DateUtils, System.Hash,
 	CloudDirItemListJsonAdapter;
-
-type
-	{Internal record for eviction sorting}
-	TMetaEntry = record
-		Hash: WideString;
-		ExpiresAt: TDateTime;
-		DataSize: Int64;
-	end;
 
 {TDiskDirectoryCache}
 
-constructor TDiskDirectoryCache.Create(const CacheDir: WideString; TTLSeconds: Integer; MaxSizeMB: Integer);
+function TDiskDirectoryCache.GetDataFileExtension: WideString;
 begin
-	inherited Create;
-	FLock := TCriticalSection.Create;
-	FCacheDir := IncludeTrailingPathDelimiter(CacheDir);
-	FTTLSeconds := TTLSeconds;
-	FMaxSizeBytes := Int64(MaxSizeMB) * 1024 * 1024;
-	ForceDirectories(FCacheDir);
-end;
-
-destructor TDiskDirectoryCache.Destroy;
-begin
-	FreeAndNil(FLock);
-	inherited;
+	Result := '.json';
 end;
 
 function TDiskDirectoryCache.NormalizePath(const Path: WideString): WideString;
@@ -101,16 +72,6 @@ end;
 function TDiskDirectoryCache.PathToHash(const Path: WideString): WideString;
 begin
 	Result := THashMD5.GetHashString(string(NormalizePath(Path)));
-end;
-
-function TDiskDirectoryCache.DataFilePath(const Hash: WideString): WideString;
-begin
-	Result := FCacheDir + Hash + '.json';
-end;
-
-function TDiskDirectoryCache.MetaFilePath(const Hash: WideString): WideString;
-begin
-	Result := FCacheDir + Hash + '.meta';
 end;
 
 procedure TDiskDirectoryCache.WriteMeta(const Hash, Path: WideString; DataSize: Int64);
@@ -157,86 +118,6 @@ begin
 		Result := Path <> '';
 	finally
 		Lines.Free;
-	end;
-end;
-
-procedure TDiskDirectoryCache.DeleteEntry(const Hash: WideString);
-begin
-	DeleteFile(DataFilePath(Hash));
-	DeleteFile(MetaFilePath(Hash));
-end;
-
-function TDiskDirectoryCache.GetTotalCacheSize: Int64;
-var
-	SR: TSearchRec;
-begin
-	Result := 0;
-	if FindFirst(FCacheDir + '*.json', faAnyFile, SR) = 0 then
-	begin
-		repeat
-			Result := Result + SR.Size;
-		until FindNext(SR) <> 0;
-		FindClose(SR);
-	end;
-end;
-
-procedure TDiskDirectoryCache.EvictIfOverSize;
-var
-	SR: TSearchRec;
-	Entries: TList<TMetaEntry>;
-	Entry: TMetaEntry;
-	TotalSize: Int64;
-	Hash, EntryPath: WideString;
-	ExpiresAt: TDateTime;
-	DataSize: Int64;
-	I: Integer;
-begin
-	{Caller must hold FLock}
-	TotalSize := GetTotalCacheSize;
-	if TotalSize <= FMaxSizeBytes then
-		Exit;
-
-	Entries := TList<TMetaEntry>.Create;
-	try
-		{Collect all meta entries}
-		if FindFirst(FCacheDir + '*.meta', faAnyFile, SR) = 0 then
-		begin
-			repeat
-				Hash := ChangeFileExt(SR.Name, '');
-				if ReadMeta(Hash, EntryPath, ExpiresAt, DataSize) then
-				begin
-					Entry.Hash := Hash;
-					Entry.ExpiresAt := ExpiresAt;
-					Entry.DataSize := DataSize;
-					Entries.Add(Entry);
-				end;
-			until FindNext(SR) <> 0;
-			FindClose(SR);
-		end;
-
-		{Sort by ExpiresAt ascending (oldest/soonest-to-expire first)}
-		Entries.Sort(TComparer<TMetaEntry>.Construct(
-			function(const Left, Right: TMetaEntry): Integer
-			begin
-				if Left.ExpiresAt < Right.ExpiresAt then
-					Result := -1
-				else if Left.ExpiresAt > Right.ExpiresAt then
-					Result := 1
-				else
-					Result := 0;
-			end));
-
-		{Delete oldest entries until under limit}
-		for I := 0 to Entries.Count - 1 do
-		begin
-			if TotalSize <= FMaxSizeBytes then
-				Break;
-			Entry := Entries[I];
-			TotalSize := TotalSize - Entry.DataSize;
-			DeleteEntry(Entry.Hash);
-		end;
-	finally
-		Entries.Free;
 	end;
 end;
 
@@ -310,25 +191,10 @@ begin
 end;
 
 procedure TDiskDirectoryCache.InvalidateAll;
-var
-	SR: TSearchRec;
 begin
 	FLock.Enter;
 	try
-		if FindFirst(FCacheDir + '*.json', faAnyFile, SR) = 0 then
-		begin
-			repeat
-				DeleteFile(FCacheDir + SR.Name);
-			until FindNext(SR) <> 0;
-			FindClose(SR);
-		end;
-		if FindFirst(FCacheDir + '*.meta', faAnyFile, SR) = 0 then
-		begin
-			repeat
-				DeleteFile(FCacheDir + SR.Name);
-			until FindNext(SR) <> 0;
-			FindClose(SR);
-		end;
+		DoInvalidateAll;
 	finally
 		FLock.Leave;
 	end;

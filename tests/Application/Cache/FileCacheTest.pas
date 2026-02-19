@@ -49,20 +49,12 @@ type
 		procedure Test_InvalidateAll;
 
 		[Test]
-		{InvalidateAll on empty cache completes without error}
-		procedure Test_InvalidateAll_EmptyCache_NoError;
-
-		[Test]
 		{Put overwrites existing entry with same hash}
 		procedure Test_Put_OverwritesExisting;
 
 		[Test]
 		{Put creates .dat and .meta sidecar files in cache dir}
 		procedure Test_Put_CreatesSidecarFiles;
-
-		[Test]
-		{Size eviction: oldest entries are evicted when over MaxSizeMB limit}
-		procedure Test_SizeEviction_RemovesOldest;
 
 		[Test]
 		{TryGet with empty hash returns False without error}
@@ -95,18 +87,6 @@ type
 		[Test]
 		{TryGet with CopyFileW failure returns False}
 		procedure Test_TryGet_CopyFailure_ReturnsFalse;
-
-		[Test]
-		{SizeEviction earliest entries are evicted first}
-		procedure Test_SizeEviction_EarliestEvictedFirst;
-
-		[Test]
-		{Eviction skips entries whose .meta is corrupt (ReadMeta returns False)}
-		procedure Test_SizeEviction_SkipsCorruptMeta;
-
-		[Test]
-		{Eviction comparator handles entries with identical ExpiresAt}
-		procedure Test_SizeEviction_SameExpiresAt;
 	end;
 
 	[TestFixture]
@@ -276,13 +256,6 @@ begin
 	Assert.IsFalse(FCache.TryGet('HASH2', DestPath));
 end;
 
-procedure TDiskFileCacheTest.Test_InvalidateAll_EmptyCache_NoError;
-begin
-	{Should not raise on a cache with no entries}
-	FCache.InvalidateAll;
-	Assert.Pass('InvalidateAll on empty cache should not raise');
-end;
-
 procedure TDiskFileCacheTest.Test_Put_OverwritesExisting;
 var
 	Source1, Source2, DestPath: WideString;
@@ -326,36 +299,6 @@ begin
 
 	Assert.AreEqual(1, DatCount, 'Should have one .dat file');
 	Assert.AreEqual(1, MetaCount, 'Should have one .meta file');
-end;
-
-procedure TDiskFileCacheTest.Test_SizeEviction_RemovesOldest;
-var
-	SmallCache: TDiskFileCache;
-	SmallCacheDir: WideString;
-	GUID: TGUID;
-	SourcePath, DestPath: WideString;
-	I: Integer;
-	Content: string;
-begin
-	CreateGUID(GUID);
-	SmallCacheDir := IncludeTrailingPathDelimiter(TPath.GetTempPath) + 'CloudMailRuFileCacheTest_Evict_' + GUIDToString(GUID) + '\';
-	ForceDirectories(SmallCacheDir);
-	SmallCache := TDiskFileCache.Create(SmallCacheDir + 'files\', 3600, 1);
-	try
-		Content := StringOfChar('X', 200 * 1024); // 200 KB each
-		for I := 1 to 8 do
-		begin
-			SourcePath := CreateTestFile('big_' + IntToStr(I) + '.bin', Content);
-			SmallCache.Put('BIGHASH' + IntToStr(I), SourcePath);
-			Sleep(20); // Ensure distinct ExpiresAt for eviction ordering
-		end;
-
-		DestPath := FTestFilesDir + 'evict_out.bin';
-		Assert.IsTrue(SmallCache.TryGet('BIGHASH8', DestPath), 'Most recent entry should survive eviction');
-	finally
-		SmallCache.Free;
-		DeleteDir(SmallCacheDir);
-	end;
 end;
 
 procedure TDiskFileCacheTest.Test_TryGet_EmptyHash_ReturnsFalse;
@@ -471,157 +414,6 @@ begin
 	DestPath := FCacheDir + 'nonexistent_output_dir\out.bin';
 	Assert.IsFalse(FCache.TryGet('COPY_FAIL_HASH', DestPath),
 		'Should return False when CopyFileW cannot write to destination');
-end;
-
-procedure TDiskFileCacheTest.Test_SizeEviction_EarliestEvictedFirst;
-var
-	SmallCache: TDiskFileCache;
-	SmallCacheDir, SmallFilesDir: WideString;
-	GUID: TGUID;
-	SourcePath, DestPath: WideString;
-	Content: string;
-begin
-	CreateGUID(GUID);
-	SmallCacheDir := IncludeTrailingPathDelimiter(TPath.GetTempPath) + 'CloudMailRuFileCacheTest_EvictOrder_' + GUIDToString(GUID) + '\';
-	SmallFilesDir := SmallCacheDir + 'files\';
-	ForceDirectories(SmallCacheDir);
-	SmallCache := TDiskFileCache.Create(SmallFilesDir, 3600, 1);
-	try
-		Content := StringOfChar('A', 400 * 1024); // 400 KB each, 3 entries = 1.2 MB > 1 MB limit
-
-		SourcePath := CreateTestFile('evict_1.bin', Content);
-		SmallCache.Put('EVICT1', SourcePath);
-		Sleep(30);
-
-		SourcePath := CreateTestFile('evict_2.bin', Content);
-		SmallCache.Put('EVICT2', SourcePath);
-		Sleep(30);
-
-		SourcePath := CreateTestFile('evict_3.bin', Content);
-		SmallCache.Put('EVICT3', SourcePath);
-
-		DestPath := FTestFilesDir + 'evict_check.bin';
-
-		{Earliest entry should be evicted}
-		Assert.IsFalse(SmallCache.TryGet('EVICT1', DestPath), 'Earliest entry should be evicted');
-		{Latest entries should survive}
-		Assert.IsTrue(SmallCache.TryGet('EVICT3', DestPath), 'Latest entry should survive');
-	finally
-		SmallCache.Free;
-		DeleteDir(SmallCacheDir);
-	end;
-end;
-
-procedure TDiskFileCacheTest.Test_SizeEviction_SkipsCorruptMeta;
-var
-	SmallCache: TDiskFileCache;
-	SmallCacheDir, SmallFilesDir: WideString;
-	GUID: TGUID;
-	SourcePath, DestPath: WideString;
-	Content: string;
-	Writer: TStreamWriter;
-	I: Integer;
-begin
-	// Put entries exceeding the limit, corrupt one .meta file so ReadMeta
-	// returns False during eviction scan. Eviction should skip the corrupt
-	// entry and still evict valid old entries.
-	CreateGUID(GUID);
-	SmallCacheDir := IncludeTrailingPathDelimiter(TPath.GetTempPath) + 'CloudMailRuFileCacheTest_CorruptEvict_' + GUIDToString(GUID) + '\';
-	SmallFilesDir := SmallCacheDir + 'files\';
-	ForceDirectories(SmallCacheDir);
-	SmallCache := TDiskFileCache.Create(SmallFilesDir, 3600, 1);
-	try
-		Content := StringOfChar('Y', 200 * 1024); // 200 KB each
-		for I := 1 to 6 do
-		begin
-			SourcePath := CreateTestFile('corrupt_ev_' + IntToStr(I) + '.bin', Content);
-			SmallCache.Put('CORRHASH' + IntToStr(I), SourcePath);
-			Sleep(20);
-		end;
-
-		// Corrupt the .meta for a middle entry (no ExpiresAt= line => ReadMeta returns False)
-		Writer := TStreamWriter.Create(SmallFilesDir + 'CORRHASH3.meta', False, TEncoding.UTF8);
-		try
-			Writer.Write('Garbage=nothing');
-		finally
-			Writer.Free;
-		end;
-
-		// Add one more entry to trigger eviction
-		SourcePath := CreateTestFile('corrupt_ev_final.bin', Content);
-		SmallCache.Put('CORRHASH_FINAL', SourcePath);
-
-		DestPath := FTestFilesDir + 'corrupt_ev_out.bin';
-		Assert.IsTrue(SmallCache.TryGet('CORRHASH_FINAL', DestPath),
-			'Final entry should survive eviction even with corrupt meta in the mix');
-	finally
-		SmallCache.Free;
-		DeleteDir(SmallCacheDir);
-	end;
-end;
-
-procedure TDiskFileCacheTest.Test_SizeEviction_SameExpiresAt;
-var
-	SmallCache: TDiskFileCache;
-	SmallCacheDir, SmallFilesDir: WideString;
-	GUID: TGUID;
-	SourcePath, DestPath: WideString;
-	Content: string;
-	MetaLines: TStringList;
-	SharedExpiry: string;
-	I: Integer;
-	SurvivedCount: Integer;
-begin
-	// Create entries with identical ExpiresAt to exercise the comparator Result := 0 branch.
-	CreateGUID(GUID);
-	SmallCacheDir := IncludeTrailingPathDelimiter(TPath.GetTempPath) + 'CloudMailRuFileCacheTest_SameExpiry_' + GUIDToString(GUID) + '\';
-	SmallFilesDir := SmallCacheDir + 'files\';
-	ForceDirectories(SmallCacheDir);
-	SmallCache := TDiskFileCache.Create(SmallFilesDir, 3600, 1);
-	try
-		Content := StringOfChar('Z', 200 * 1024); // 200 KB each
-		SharedExpiry := FloatToStr(Now + 3600 / SecsPerDay);
-
-		// Put entries normally first (to create .dat files)
-		for I := 1 to 8 do
-		begin
-			SourcePath := CreateTestFile('same_exp_' + IntToStr(I) + '.bin', Content);
-			SmallCache.Put('SAMEXP' + IntToStr(I), SourcePath);
-		end;
-
-		// Overwrite all .meta files with identical ExpiresAt
-		for I := 1 to 8 do
-		begin
-			MetaLines := TStringList.Create;
-			try
-				MetaLines.Add('ExpiresAt=' + SharedExpiry);
-				MetaLines.Add('DataSize=' + IntToStr(200 * 1024));
-				MetaLines.SaveToFile(SmallFilesDir + 'SAMEXP' + IntToStr(I) + '.meta', TEncoding.UTF8);
-			finally
-				MetaLines.Free;
-			end;
-		end;
-
-		// Add one more entry to trigger eviction (gets a fresh ExpiresAt)
-		SourcePath := CreateTestFile('same_exp_trigger.bin', Content);
-		SmallCache.Put('SAMEXP_TRIGGER', SourcePath);
-
-		// Eviction should work without errors when all ExpiresAt are equal
-		DestPath := FTestFilesDir + 'same_exp_out.bin';
-		SurvivedCount := 0;
-		for I := 1 to 8 do
-		begin
-			if SmallCache.TryGet('SAMEXP' + IntToStr(I), DestPath) then
-				Inc(SurvivedCount);
-		end;
-		Assert.IsTrue(SurvivedCount < 8,
-			'Some entries with same ExpiresAt should be evicted');
-		Assert.IsTrue(SmallCache.TryGet('SAMEXP_TRIGGER', DestPath),
-			'Trigger entry should survive');
-	finally
-		SmallCache.Free;
-		DeleteDir(SmallCacheDir);
-	end;
 end;
 
 {TNullFileCacheTest}
