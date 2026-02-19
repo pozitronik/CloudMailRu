@@ -2,8 +2,9 @@ unit PluginForm;
 
 {Base form class for all plugin dialog forms.
 	Provides automatic centering relative to the TC parent window.
-	Centering runs on Activate (re-center when form regains focus)
-	and on Resize (re-center after VCL DPI scaling changes form size).}
+	Centering runs once on first Activate (initial show).
+	Not repeated on Resize to avoid jumping back to TC's monitor
+	when the user drags the form to a different-DPI display.}
 
 interface
 
@@ -16,10 +17,10 @@ uses
 type
 	TPluginForm = class(TForm)
 	private
+		FCentered: Boolean;
 		procedure CenterToParent;
 	protected
 		procedure Activate; override;
-		procedure Resize; override;
 	end;
 
 implementation
@@ -27,13 +28,11 @@ implementation
 procedure TPluginForm.Activate;
 begin
 	inherited;
-	CenterToParent;
-end;
-
-procedure TPluginForm.Resize;
-begin
-	inherited;
-	CenterToParent;
+	if not FCentered then
+	begin
+		CenterToParent;
+		FCentered := True;
+	end;
 end;
 
 procedure TPluginForm.CenterToParent;
