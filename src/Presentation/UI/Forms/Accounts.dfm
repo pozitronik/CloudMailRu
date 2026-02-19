@@ -12,7 +12,7 @@ object AccountsForm: TAccountsForm
   Font.Name = 'Tahoma'
   Font.Style = []
   KeyPreview = True
-  Position = poScreenCenter
+  Position = poMainFormCenter
   OnKeyUp = FormKeyUp
   OnShow = FormShow
   TextHeight = 13
@@ -1473,7 +1473,6 @@ object AccountsForm: TAccountsForm
         Align = alTop
         Caption = 'Directory listing cache'
         TabOrder = 2
-        ExplicitTop = 82
         DesignSize = (
           701
           105)
@@ -1549,7 +1548,6 @@ object AccountsForm: TAccountsForm
         Align = alTop
         Caption = 'File content cache'
         TabOrder = 3
-        ExplicitTop = 187
         DesignSize = (
           701
           105)

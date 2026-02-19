@@ -2,23 +2,31 @@ unit PluginForm;
 
 {Base form class for all plugin dialog forms.
 	Provides automatic centering relative to the TC parent window.
-	Centering runs once on first Activate (initial show).
-	Not repeated on Resize to avoid jumping back to TC's monitor
-	when the user drags the form to a different-DPI display.}
+	Centering is deferred via PostMessage so VCL initialization
+	completes before we read the final window size.
+	On multi-monitor setups with mixed DPI, the initial centering
+	may trigger WM_DPICHANGED when the form crosses a DPI boundary.
+	VCL then overrides our position with the Windows suggested rect,
+	so we re-center once more after the DPI change is handled.}
 
 interface
 
 uses
 	Vcl.Forms,
 	Windows,
+	Messages,
 	Math,
 	MultiMon;
 
 type
 	TPluginForm = class(TForm)
 	private
-		FCentered: Boolean;
+		const WM_DEFERRED_CENTER = WM_USER + 1;
+	private
+		FCenterCount: Integer;
 		procedure CenterToParent;
+		procedure WMDeferredCenter(var Message: TMessage); message WM_DEFERRED_CENTER;
+		procedure WMDpiChanged(var Message: TMessage); message $02E0; // WM_DPICHANGED
 	protected
 		procedure Activate; override;
 	end;
@@ -28,11 +36,24 @@ implementation
 procedure TPluginForm.Activate;
 begin
 	inherited;
-	if not FCentered then
-	begin
-		CenterToParent;
-		FCentered := True;
-	end;
+	if FCenterCount = 0 then
+		PostMessage(Handle, WM_DEFERRED_CENTER, 0, 0);
+end;
+
+procedure TPluginForm.WMDeferredCenter(var Message: TMessage);
+begin
+	Inc(FCenterCount);
+	CenterToParent;
+end;
+
+procedure TPluginForm.WMDpiChanged(var Message: TMessage);
+begin
+	inherited;
+	// VCL repositions the form using the Windows suggested rect,
+	// overriding our centering. Re-center once after the first
+	// DPI change (FCenterCount = 1 means initial centering just happened).
+	if FCenterCount = 1 then
+		PostMessage(Handle, WM_DEFERRED_CENTER, 0, 0);
 end;
 
 procedure TPluginForm.CenterToParent;
