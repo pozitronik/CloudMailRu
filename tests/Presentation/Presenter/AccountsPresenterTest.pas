@@ -88,18 +88,22 @@ type
 		{File history settings}
 		FFileHistoryEnabled: Boolean;
 
+		{Cache directory}
+		FCacheDir: WideString;
+
 		{Listing cache settings}
 		FCacheEnabled: Boolean;
 		FCacheTTL: Integer;
 		FCacheMaxSizeMB: Integer;
-		FCacheDir: WideString;
 		FCacheStatus: WideString;
+		FListingCacheSize: WideString;
 
 		{File cache settings}
 		FFileCacheEnabled: Boolean;
 		FFileCacheTTL: Integer;
 		FFileCacheMaxSizeMB: Integer;
 		FFileCacheStatus: WideString;
+		FFileCacheSize: WideString;
 
 		{Streaming extensions}
 		FStreamingDisplayItems: TArray<TStreamingDisplayItem>;
@@ -290,6 +294,9 @@ type
 		procedure SetFileHistoryEnabled(Value: Boolean);
 		function GetFileHistoryEnabled: Boolean;
 
+		{IAccountsView - Cache directory}
+		procedure SetCacheDir(Value: WideString);
+		function GetCacheDir: WideString;
 		{IAccountsView - Listing cache settings}
 		procedure SetCacheEnabled(Value: Boolean);
 		function GetCacheEnabled: Boolean;
@@ -297,9 +304,8 @@ type
 		function GetCacheTTL: Integer;
 		procedure SetCacheMaxSizeMB(Value: Integer);
 		function GetCacheMaxSizeMB: Integer;
-		procedure SetCacheDir(Value: WideString);
-		function GetCacheDir: WideString;
 		procedure SetCacheStatus(const Value: WideString);
+		procedure SetListingCacheSize(const Value: WideString);
 
 		{IAccountsView - File cache settings}
 		procedure SetFileCacheEnabled(Value: Boolean);
@@ -309,6 +315,7 @@ type
 		procedure SetFileCacheMaxSizeMB(Value: Integer);
 		function GetFileCacheMaxSizeMB: Integer;
 		procedure SetFileCacheStatus(const Value: WideString);
+		procedure SetFileCacheSize(const Value: WideString);
 
 		{IAccountsView - Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -1341,6 +1348,11 @@ begin
 	FCacheStatus := Value;
 end;
 
+procedure TMockAccountsView.SetListingCacheSize(const Value: WideString);
+begin
+	FListingCacheSize := Value;
+end;
+
 {File cache settings}
 
 procedure TMockAccountsView.SetFileCacheEnabled(Value: Boolean);
@@ -1376,6 +1388,11 @@ end;
 procedure TMockAccountsView.SetFileCacheStatus(const Value: WideString);
 begin
 	FFileCacheStatus := Value;
+end;
+
+procedure TMockAccountsView.SetFileCacheSize(const Value: WideString);
+begin
+	FFileCacheSize := Value;
 end;
 
 {Streaming extensions}

@@ -446,11 +446,16 @@ ERR_FILE_HISTORY_MSG="Ошибка при получении истории ве
 
 # Вкладка кеша
 DFM_TAB_CACHE="Кеш"
+DFM_GB_CACHE_DIR="Каталог кеша"
+DFM_LBL_CACHE_DIR="Каталог:"
+DFM_LBL_CACHE_DIR_BROWSE="Выберите каталог кеша"
+DFM_BTN_BROWSE="Обзор..."
+DFM_LBL_LISTING_CACHE_SIZE="Кеш каталогов: %s"
+DFM_LBL_FILE_CACHE_SIZE="Кеш файлов: %s"
 DFM_GB_LISTING_CACHE="Кеширование списков каталогов"
 DFM_CB_CACHE_ENABLED="Включить кеширование списков каталогов"
 DFM_LBL_CACHE_TTL="Время жизни записи кеша (секунды):"
 DFM_LBL_CACHE_MAX_SIZE="Максимальный размер кеша (МБ):"
-DFM_LBL_CACHE_DIR="Каталог кеша (пусто = автоматически):"
 DFM_BTN_CLEAR_CACHE="Очистить кеш"
 DFM_CACHE_CLEARED="Кеш успешно очищен"
 DFM_CACHE_CLEAR_ERROR="Ошибка очистки кеша: %s"

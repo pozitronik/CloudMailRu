@@ -11,6 +11,7 @@ uses
 	Vcl.Controls,
 	Vcl.Forms,
 	Vcl.Dialogs,
+	Vcl.FileCtrl,
 	Vcl.StdCtrls,
 	PathHelper,
 	PluginForm,
@@ -152,16 +153,10 @@ type
 		TranslationStatusLabel: TLabel;
 		CacheTab: TTabSheet;
 		CacheSettingsApplyBtn: TButton;
-		CacheSettingsGB: TGroupBox;
-		CacheTTLLabel: TLabel;
-		CacheMaxSizeLabel: TLabel;
+		CacheDirGB: TGroupBox;
 		CacheDirLabel: TLabel;
-		CacheStatusLabel: TLabel;
-		CacheEnabledCB: TCheckBox;
-		CacheTTLEdit: TSpinEdit;
-		CacheMaxSizeEdit: TSpinEdit;
 		CacheDirEdit: TEdit;
-		ClearCacheButton: TButton;
+		BrowseCacheDirButton: TButton;
 		FileCacheSettingsGB: TGroupBox;
 		FileCacheTTLLabel: TLabel;
 		FileCacheMaxSizeLabel: TLabel;
@@ -219,6 +214,16 @@ type
     FileHistoryCB: TCheckBox;
     CloudMaxFileSizeValue: TEdit;
     CloudMaxFileSizeLabelBytes: TLabel;
+    CacheSettingsGB: TGroupBox;
+    CacheTTLLabel: TLabel;
+    CacheMaxSizeLabel: TLabel;
+    CacheStatusLabel: TLabel;
+    CacheEnabledCB: TCheckBox;
+    CacheTTLEdit: TSpinEdit;
+    CacheMaxSizeEdit: TSpinEdit;
+    ClearCacheButton: TButton;
+    ListingCacheSizeLabel: TLabel;
+    FileCacheSizeLabel: TLabel;
 		procedure FormShow(Sender: TObject);
 		procedure AccountsListViewKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 		procedure AccountsListViewSelectItem(Sender: TObject; Item: TListItem; Selected: Boolean);
@@ -264,6 +269,8 @@ type
 		procedure ApplyTranslationBtnClick(Sender: TObject);
 		procedure ClearCacheButtonClick(Sender: TObject);
 		procedure ClearFileCacheButtonClick(Sender: TObject);
+		procedure BrowseCacheDirButtonClick(Sender: TObject);
+		procedure CacheDirEditChange(Sender: TObject);
     procedure TimestampModeCBChange(Sender: TObject);
 	private
 		FPresenter: TAccountsPresenter;
@@ -372,6 +379,9 @@ type
 		procedure SetFileHistoryEnabled(Value: Boolean);
 		function GetFileHistoryEnabled: Boolean;
 
+		{IAccountsView - Cache directory}
+		procedure SetCacheDir(Value: WideString);
+		function GetCacheDir: WideString;
 		{IAccountsView - Listing cache settings}
 		procedure SetCacheEnabled(Value: Boolean);
 		function GetCacheEnabled: Boolean;
@@ -379,9 +389,8 @@ type
 		function GetCacheTTL: Integer;
 		procedure SetCacheMaxSizeMB(Value: Integer);
 		function GetCacheMaxSizeMB: Integer;
-		procedure SetCacheDir(Value: WideString);
-		function GetCacheDir: WideString;
 		procedure SetCacheStatus(const Value: WideString);
+		procedure SetListingCacheSize(const Value: WideString);
 
 		{IAccountsView - File cache settings}
 		procedure SetFileCacheEnabled(Value: Boolean);
@@ -391,6 +400,7 @@ type
 		procedure SetFileCacheMaxSizeMB(Value: Integer);
 		function GetFileCacheMaxSizeMB: Integer;
 		procedure SetFileCacheStatus(const Value: WideString);
+		procedure SetFileCacheSize(const Value: WideString);
 
 		{IAccountsView - Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -1048,6 +1058,12 @@ end;
 procedure TAccountsForm.SetCacheStatus(const Value: WideString);
 begin
 	CacheStatusLabel.Caption := Value;
+	CacheStatusLabel.Visible := Value <> '';
+end;
+
+procedure TAccountsForm.SetListingCacheSize(const Value: WideString);
+begin
+	ListingCacheSizeLabel.Caption := Value;
 end;
 
 {IAccountsView - File cache settings}
@@ -1085,6 +1101,12 @@ end;
 procedure TAccountsForm.SetFileCacheStatus(const Value: WideString);
 begin
 	FileCacheStatusLabel.Caption := Value;
+	FileCacheStatusLabel.Visible := Value <> '';
+end;
+
+procedure TAccountsForm.SetFileCacheSize(const Value: WideString);
+begin
+	FileCacheSizeLabel.Caption := Value;
 end;
 
 {IAccountsView - Streaming extensions}
@@ -2172,11 +2194,13 @@ begin
 	StreamingExtensionsListView.Columns[1].Caption := DFM_COL_TYPE;
 
 	{Cache tab}
+	CacheDirGB.Caption := DFM_GB_CACHE_DIR;
+	CacheDirLabel.Caption := DFM_LBL_CACHE_DIR;
+	BrowseCacheDirButton.Caption := DFM_BTN_BROWSE;
 	CacheSettingsGB.Caption := DFM_GB_LISTING_CACHE;
 	CacheEnabledCB.Caption := DFM_CB_CACHE_ENABLED;
 	CacheTTLLabel.Caption := DFM_LBL_CACHE_TTL;
 	CacheMaxSizeLabel.Caption := DFM_LBL_CACHE_MAX_SIZE;
-	CacheDirLabel.Caption := DFM_LBL_CACHE_DIR;
 	ClearCacheButton.Caption := DFM_BTN_CLEAR_CACHE;
 	FileCacheSettingsGB.Caption := DFM_GB_FILE_CACHE;
 	FileCacheEnabledCB.Caption := DFM_CB_FILE_CACHE_ENABLED;
@@ -2239,6 +2263,24 @@ end;
 procedure TAccountsForm.ClearFileCacheButtonClick(Sender: TObject);
 begin
 	FPresenter.OnClearFileCacheClick;
+end;
+
+procedure TAccountsForm.BrowseCacheDirButtonClick(Sender: TObject);
+var
+	Dir: string;
+begin
+	Dir := CacheDirEdit.Text;
+	if SelectDirectory(DFM_LBL_CACHE_DIR_BROWSE, '', Dir) then
+	begin
+		CacheDirEdit.Text := Dir;
+		FPresenter.OnCacheDirChanged;
+	end;
+end;
+
+procedure TAccountsForm.CacheDirEditChange(Sender: TObject);
+begin
+	GlobalSettingsFieldChanged(Sender);
+	FPresenter.OnCacheDirChanged;
 end;
 
 {IAccountsView - Dialogs}

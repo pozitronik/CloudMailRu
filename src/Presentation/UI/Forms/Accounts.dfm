@@ -24,7 +24,6 @@ object AccountsForm: TAccountsForm
     ActivePage = AccountsTab
     Align = alClient
     TabOrder = 0
-    ExplicitLeft = 1
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
       ImageIndex = 5
@@ -496,7 +495,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Show file version history'
         TabOrder = 14
         OnClick = GlobalSettingsFieldChanged
-        ExplicitWidth = 1176
       end
       object GlobalSettingsApplyBtn: TButton
         Left = 573
@@ -508,7 +506,6 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 13
         OnClick = GlobalSettingsApplyBtnClick
-        ExplicitLeft = 1052
       end
       object ChunkOverwriteModeCombo: TComboBox
         Left = 237
@@ -569,7 +566,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Disable background operations support'
         TabOrder = 12
         OnClick = GlobalSettingsFieldChanged
-        ExplicitWidth = 1176
       end
       object IconsModeCombo: TComboBox
         Left = 237
@@ -598,7 +594,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Enable space info logging'
         TabOrder = 11
         OnClick = GlobalSettingsFieldChanged
-        ExplicitWidth = 1176
       end
       object OperationErrorModeCombo: TComboBox
         Left = 237
@@ -656,7 +651,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Check uploads/downloads CRC'
         TabOrder = 15
         OnClick = GlobalSettingsFieldChanged
-        ExplicitWidth = 1176
       end
       object CopyBetweenAccountsModeCombo: TComboBox
         Left = 237
@@ -699,7 +693,6 @@ object AccountsForm: TAccountsForm
         Padding.Left = 3
         Padding.Bottom = 3
         TabOrder = 0
-        ExplicitWidth = 1180
         object ShowInvitesFoldersCB: TCheckBox
           Left = 5
           Top = 15
@@ -746,7 +739,6 @@ object AccountsForm: TAccountsForm
         Align = alTop
         Caption = 'Proxy settings'
         TabOrder = 1
-        ExplicitWidth = 1180
         DesignSize = (
           701
           156)
@@ -811,7 +803,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 1
           OnChange = GlobalSettingsFieldChanged
-          ExplicitWidth = 935
         end
         object ProxyPortEdit: TEdit
           Left = 624
@@ -822,7 +813,6 @@ object AccountsForm: TAccountsForm
           NumbersOnly = True
           TabOrder = 2
           OnChange = GlobalSettingsFieldChanged
-          ExplicitLeft = 1103
         end
         object ProxyUserEdit: TEdit
           Left = 132
@@ -832,7 +822,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 3
           OnChange = ProxyUserEditChange
-          ExplicitWidth = 1043
         end
         object ProxyPwd: TMaskEdit
           Left = 132
@@ -844,7 +833,6 @@ object AccountsForm: TAccountsForm
           TabOrder = 4
           Text = ''
           OnChange = GlobalSettingsFieldChanged
-          ExplicitWidth = 1043
         end
         object ProxyTCPwdMngrCB: TCheckBox
           Left = 4
@@ -855,7 +843,6 @@ object AccountsForm: TAccountsForm
           Caption = 'Store proxy password in TC password manager'
           TabOrder = 5
           OnClick = GlobalSettingsFieldChanged
-          ExplicitWidth = 778
         end
       end
       object NetworkSettingsApplyBtn: TButton
@@ -868,7 +855,6 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 6
         OnClick = GlobalSettingsApplyBtnClick
-        ExplicitLeft = 1052
       end
       object SpeedLimitGB: TGroupBox
         Left = 0
@@ -878,7 +864,6 @@ object AccountsForm: TAccountsForm
         Align = alTop
         Caption = 'Limits and timeouts'
         TabOrder = 2
-        ExplicitWidth = 1180
         DesignSize = (
           701
           106)
@@ -923,7 +908,6 @@ object AccountsForm: TAccountsForm
           TabOrder = 0
           Value = 0
           OnChange = GlobalSettingsFieldChanged
-          ExplicitWidth = 883
         end
         object DownloadBPSEdit: TSpinEdit
           Left = 292
@@ -936,7 +920,6 @@ object AccountsForm: TAccountsForm
           TabOrder = 1
           Value = 0
           OnChange = GlobalSettingsFieldChanged
-          ExplicitWidth = 883
         end
         object SocketTimeoutEdit: TSpinEdit
           Left = 292
@@ -949,7 +932,6 @@ object AccountsForm: TAccountsForm
           TabOrder = 2
           Value = 30000
           OnChange = GlobalSettingsFieldChanged
-          ExplicitWidth = 883
         end
       end
       object UserAgentEdit: TEdit
@@ -960,7 +942,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 5
         OnChange = GlobalSettingsFieldChanged
-        ExplicitWidth = 1180
       end
       object ChangeUserAgentCB: TCheckBox
         Left = 0
@@ -988,7 +969,6 @@ object AccountsForm: TAccountsForm
         Align = alTop
         Caption = 'SSL/TLS'
         TabOrder = 0
-        ExplicitWidth = 1180
         DesignSize = (
           701
           67)
@@ -1018,7 +998,6 @@ object AccountsForm: TAccountsForm
           Caption = 'Load SSL libraries only from plugin directory'
           TabOrder = 1
           OnClick = GlobalSettingsFieldChanged
-          ExplicitWidth = 1171
         end
       end
     end
@@ -1293,7 +1272,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 3
         OnChange = StreamingFieldChanged
-        ExplicitWidth = 904
       end
       object CommandPathEdit: TEdit
         Left = 272
@@ -1303,7 +1281,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
         OnChange = StreamingFieldChanged
-        ExplicitWidth = 876
       end
       object CommandPathButton: TButton
         Left = 675
@@ -1314,7 +1291,6 @@ object AccountsForm: TAccountsForm
         Caption = '...'
         TabOrder = 5
         OnClick = CommandPathButtonClick
-        ExplicitLeft = 1154
       end
       object ParametersEdit: TEdit
         Left = 272
@@ -1324,7 +1300,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 6
         OnChange = StreamingFieldChanged
-        ExplicitWidth = 904
       end
       object StartPathEdit: TEdit
         Left = 272
@@ -1334,7 +1309,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 7
         OnChange = StreamingFieldChanged
-        ExplicitWidth = 904
       end
       object StreamingTypeCombo: TComboBox
         Left = 272
@@ -1364,7 +1338,6 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 9
         OnClick = ApplyExtButtonClick
-        ExplicitLeft = 1052
       end
       object NewExtButton: TButton
         Left = 4
@@ -1426,48 +1399,109 @@ object AccountsForm: TAccountsForm
         TabOrder = 0
         OnClick = GlobalSettingsApplyBtnClick
       end
-      object CacheSettingsGB: TGroupBox
+      object CacheDirGB: TGroupBox
         Left = 0
         Top = 0
         Width = 701
-        Height = 210
+        Height = 85
         Align = alTop
-        Caption = 'Directory listing cache'
+        Caption = 'Cache directory'
         TabOrder = 1
         DesignSize = (
           701
-          210)
+          85)
+        object CacheDirLabel: TLabel
+          Left = 4
+          Top = 20
+          Width = 48
+          Height = 13
+          Caption = 'Directory:'
+        end
+        object ListingCacheSizeLabel: TLabel
+          Left = 4
+          Top = 42
+          Width = 692
+          Height = 13
+          AutoSize = False
+          Caption = 'Listing cache: -'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clGray
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object FileCacheSizeLabel: TLabel
+          Left = 4
+          Top = 64
+          Width = 692
+          Height = 13
+          AutoSize = False
+          Caption = 'File cache: -'
+          Font.Charset = DEFAULT_CHARSET
+          Font.Color = clGray
+          Font.Height = -11
+          Font.Name = 'Tahoma'
+          Font.Style = []
+          ParentFont = False
+        end
+        object CacheDirEdit: TEdit
+          Left = 116
+          Top = 17
+          Width = 494
+          Height = 21
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 0
+          OnChange = CacheDirEditChange
+        end
+        object BrowseCacheDirButton: TButton
+          Left = 616
+          Top = 17
+          Width = 80
+          Height = 21
+          Anchors = [akTop, akRight]
+          Caption = 'Browse...'
+          TabOrder = 1
+          OnClick = BrowseCacheDirButtonClick
+        end
+      end
+      object CacheSettingsGB: TGroupBox
+        Left = 0
+        Top = 85
+        Width = 701
+        Height = 105
+        Align = alTop
+        Caption = 'Directory listing cache'
+        TabOrder = 2
+        ExplicitTop = 82
+        DesignSize = (
+          701
+          105)
         object CacheTTLLabel: TLabel
           Left = 4
-          Top = 43
-          Width = 137
+          Top = 45
+          Width = 133
           Height = 13
           Caption = 'Cache entry TTL (seconds):'
         end
         object CacheMaxSizeLabel: TLabel
           Left = 4
-          Top = 73
-          Width = 134
+          Top = 75
+          Width = 125
           Height = 13
           Caption = 'Maximum cache size (MB):'
         end
-        object CacheDirLabel: TLabel
-          Left = 4
-          Top = 103
-          Width = 162
-          Height = 13
-          Caption = 'Cache directory (empty = auto):'
-        end
         object CacheStatusLabel: TLabel
-          Left = 4
-          Top = 170
+          Left = 160
+          Top = 107
           Width = 3
           Height = 13
+          Visible = False
         end
         object CacheEnabledCB: TCheckBox
           Left = 4
           Top = 17
-          Width = 693
+          Width = 692
           Height = 17
           Anchors = [akLeft, akTop, akRight]
           Caption = 'Enable directory listing cache'
@@ -1476,7 +1510,7 @@ object AccountsForm: TAccountsForm
         end
         object CacheTTLEdit: TSpinEdit
           Left = 290
-          Top = 40
+          Top = 42
           Width = 90
           Height = 22
           MaxValue = 86400
@@ -1487,7 +1521,7 @@ object AccountsForm: TAccountsForm
         end
         object CacheMaxSizeEdit: TSpinEdit
           Left = 290
-          Top = 70
+          Top = 72
           Width = 90
           Height = 22
           MaxValue = 10240
@@ -1496,55 +1530,49 @@ object AccountsForm: TAccountsForm
           Value = 50
           OnChange = GlobalSettingsFieldChanged
         end
-        object CacheDirEdit: TEdit
-          Left = 290
-          Top = 100
-          Width = 407
-          Height = 21
-          Anchors = [akLeft, akTop, akRight]
-          TabOrder = 3
-          OnChange = GlobalSettingsFieldChanged
-        end
         object ClearCacheButton: TButton
-          Left = 4
-          Top = 136
+          Left = 546
+          Top = 72
           Width = 150
-          Height = 25
+          Height = 21
+          Anchors = [akTop, akRight]
           Caption = 'Clear cache now'
-          TabOrder = 4
+          TabOrder = 3
           OnClick = ClearCacheButtonClick
         end
       end
       object FileCacheSettingsGB: TGroupBox
         Left = 0
-        Top = 210
+        Top = 190
         Width = 701
-        Height = 170
+        Height = 105
         Align = alTop
         Caption = 'File content cache'
-        TabOrder = 2
+        TabOrder = 3
+        ExplicitTop = 187
         DesignSize = (
           701
-          170)
+          105)
         object FileCacheTTLLabel: TLabel
           Left = 4
-          Top = 43
-          Width = 137
+          Top = 45
+          Width = 133
           Height = 13
           Caption = 'Cache entry TTL (seconds):'
         end
         object FileCacheMaxSizeLabel: TLabel
           Left = 4
-          Top = 73
-          Width = 157
+          Top = 75
+          Width = 142
           Height = 13
           Caption = 'Maximum file cache size (MB):'
         end
         object FileCacheStatusLabel: TLabel
-          Left = 4
-          Top = 136
+          Left = 160
+          Top = 107
           Width = 3
           Height = 13
+          Visible = False
         end
         object FileCacheEnabledCB: TCheckBox
           Left = 4
@@ -1558,7 +1586,7 @@ object AccountsForm: TAccountsForm
         end
         object FileCacheTTLEdit: TSpinEdit
           Left = 290
-          Top = 40
+          Top = 42
           Width = 90
           Height = 22
           MaxValue = 86400
@@ -1569,7 +1597,7 @@ object AccountsForm: TAccountsForm
         end
         object FileCacheMaxSizeEdit: TSpinEdit
           Left = 290
-          Top = 70
+          Top = 72
           Width = 90
           Height = 22
           MaxValue = 102400
@@ -1579,10 +1607,11 @@ object AccountsForm: TAccountsForm
           OnChange = GlobalSettingsFieldChanged
         end
         object ClearFileCacheButton: TButton
-          Left = 4
-          Top = 100
+          Left = 546
+          Top = 72
           Width = 150
-          Height = 25
+          Height = 21
+          Anchors = [akTop, akRight]
           Caption = 'Clear file cache'
           TabOrder = 3
           OnClick = ClearFileCacheButtonClick
@@ -1649,7 +1678,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 3
         OnChange = ServerFieldChanged
-        ExplicitWidth = 904
       end
       object ServerUrlEdit: TEdit
         Left = 272
@@ -1659,7 +1687,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         TabOrder = 4
         OnChange = ServerFieldChanged
-        ExplicitWidth = 818
       end
       object TestServerButton: TButton
         Left = 617
@@ -1670,7 +1697,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Test'
         TabOrder = 5
         OnClick = TestServerButtonClick
-        ExplicitLeft = 1096
       end
       object AddServerButton: TButton
         Left = 4
@@ -1702,7 +1728,6 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 6
         OnClick = ApplyServerButtonClick
-        ExplicitLeft = 1052
       end
       object ServerParametersGB: TGroupBox
         Left = 272
@@ -1712,7 +1737,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight]
         Caption = 'Server parameters'
         TabOrder = 7
-        ExplicitWidth = 904
         DesignSize = (
           425
           327)
@@ -1780,7 +1804,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 0
           OnChange = ServerFieldChanged
-          ExplicitWidth = 395
         end
         object OAuthUrlEdit: TEdit
           Left = 8
@@ -1790,7 +1813,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 1
           OnChange = ServerFieldChanged
-          ExplicitWidth = 395
         end
         object DispatcherUrlEdit: TEdit
           Left = 8
@@ -1800,7 +1822,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 2
           OnChange = ServerFieldChanged
-          ExplicitWidth = 395
         end
         object ThumbnailUrlEdit: TEdit
           Left = 8
@@ -1810,7 +1831,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 3
           OnChange = ServerFieldChanged
-          ExplicitWidth = 395
         end
         object ServerPublicUrlEdit: TEdit
           Left = 8
@@ -1820,7 +1840,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 4
           OnChange = ServerFieldChanged
-          ExplicitWidth = 395
         end
         object DownloadUrlEdit: TEdit
           Left = 8
@@ -1830,7 +1849,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 5
           OnChange = ServerFieldChanged
-          ExplicitWidth = 395
         end
         object UploadUrlEdit: TEdit
           Left = 8
@@ -1840,7 +1858,6 @@ object AccountsForm: TAccountsForm
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 6
           OnChange = ServerFieldChanged
-          ExplicitWidth = 395
         end
       end
     end
@@ -1883,7 +1900,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         TabOrder = 1
         OnClick = ApplyTranslationBtnClick
-        ExplicitLeft = 1052
       end
     end
   end

@@ -465,6 +465,11 @@ var
 	DFM_BTN_CLEAR_CACHE: WideString;
 	DFM_CACHE_CLEARED: WideString;
 	DFM_CACHE_CLEAR_ERROR: WideString;
+	DFM_GB_CACHE_DIR: WideString;
+	DFM_LBL_CACHE_DIR_BROWSE: WideString;
+	DFM_BTN_BROWSE: WideString;
+	DFM_LBL_LISTING_CACHE_SIZE: WideString;
+	DFM_LBL_FILE_CACHE_SIZE: WideString;
 	DFM_GB_FILE_CACHE: WideString;
 	DFM_CB_FILE_CACHE_ENABLED: WideString;
 	DFM_LBL_FILE_CACHE_TTL: WideString;
@@ -932,11 +937,16 @@ begin
 	DFM_TRANS_ERROR := 'Error: %s';
 
 	DFM_TAB_CACHE := 'Cache';
+	DFM_GB_CACHE_DIR := 'Cache directory';
+	DFM_LBL_CACHE_DIR := 'Directory:';
+	DFM_LBL_CACHE_DIR_BROWSE := 'Select cache directory';
+	DFM_BTN_BROWSE := 'Browse...';
+	DFM_LBL_LISTING_CACHE_SIZE := 'Listing cache: %s';
+	DFM_LBL_FILE_CACHE_SIZE := 'File cache: %s';
 	DFM_GB_LISTING_CACHE := 'Directory listing cache';
 	DFM_CB_CACHE_ENABLED := 'Enable directory listing cache';
 	DFM_LBL_CACHE_TTL := 'Cache entry TTL (seconds):';
 	DFM_LBL_CACHE_MAX_SIZE := 'Maximum cache size (MB):';
-	DFM_LBL_CACHE_DIR := 'Cache directory (empty = auto):';
 	DFM_BTN_CLEAR_CACHE := 'Clear cache now';
 	DFM_CACHE_CLEARED := 'Cache cleared successfully';
 	DFM_CACHE_CLEAR_ERROR := 'Error clearing cache: %s';
@@ -1388,11 +1398,16 @@ begin
 	TranslationRegistry.Add('DFM_TRANS_ERROR', @DFM_TRANS_ERROR);
 
 	TranslationRegistry.Add('DFM_TAB_CACHE', @DFM_TAB_CACHE);
+	TranslationRegistry.Add('DFM_GB_CACHE_DIR', @DFM_GB_CACHE_DIR);
+	TranslationRegistry.Add('DFM_LBL_CACHE_DIR', @DFM_LBL_CACHE_DIR);
+	TranslationRegistry.Add('DFM_LBL_CACHE_DIR_BROWSE', @DFM_LBL_CACHE_DIR_BROWSE);
+	TranslationRegistry.Add('DFM_BTN_BROWSE', @DFM_BTN_BROWSE);
+	TranslationRegistry.Add('DFM_LBL_LISTING_CACHE_SIZE', @DFM_LBL_LISTING_CACHE_SIZE);
+	TranslationRegistry.Add('DFM_LBL_FILE_CACHE_SIZE', @DFM_LBL_FILE_CACHE_SIZE);
 	TranslationRegistry.Add('DFM_GB_LISTING_CACHE', @DFM_GB_LISTING_CACHE);
 	TranslationRegistry.Add('DFM_CB_CACHE_ENABLED', @DFM_CB_CACHE_ENABLED);
 	TranslationRegistry.Add('DFM_LBL_CACHE_TTL', @DFM_LBL_CACHE_TTL);
 	TranslationRegistry.Add('DFM_LBL_CACHE_MAX_SIZE', @DFM_LBL_CACHE_MAX_SIZE);
-	TranslationRegistry.Add('DFM_LBL_CACHE_DIR', @DFM_LBL_CACHE_DIR);
 	TranslationRegistry.Add('DFM_BTN_CLEAR_CACHE', @DFM_BTN_CLEAR_CACHE);
 	TranslationRegistry.Add('DFM_CACHE_CLEARED', @DFM_CACHE_CLEARED);
 	TranslationRegistry.Add('DFM_CACHE_CLEAR_ERROR', @DFM_CACHE_CLEAR_ERROR);

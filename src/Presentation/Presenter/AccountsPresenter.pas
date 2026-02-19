@@ -153,6 +153,10 @@ type
 		procedure SetFileHistoryEnabled(Value: Boolean);
 		function GetFileHistoryEnabled: Boolean;
 
+		{Cache directory}
+		procedure SetCacheDir(Value: WideString);
+		function GetCacheDir: WideString;
+
 		{Listing cache settings}
 		procedure SetCacheEnabled(Value: Boolean);
 		function GetCacheEnabled: Boolean;
@@ -160,9 +164,8 @@ type
 		function GetCacheTTL: Integer;
 		procedure SetCacheMaxSizeMB(Value: Integer);
 		function GetCacheMaxSizeMB: Integer;
-		procedure SetCacheDir(Value: WideString);
-		function GetCacheDir: WideString;
 		procedure SetCacheStatus(const Value: WideString);
+		procedure SetListingCacheSize(const Value: WideString);
 
 		{File cache settings}
 		procedure SetFileCacheEnabled(Value: Boolean);
@@ -172,6 +175,7 @@ type
 		procedure SetFileCacheMaxSizeMB(Value: Integer);
 		function GetFileCacheMaxSizeMB: Integer;
 		procedure SetFileCacheStatus(const Value: WideString);
+		procedure SetFileCacheSize(const Value: WideString);
 
 		{Streaming extensions}
 		procedure SetStreamingExtensionsList(const Items: TArray<TStreamingDisplayItem>);
@@ -383,6 +387,12 @@ type
 		function CheckStreamingDirty: Boolean;
 		function StreamingFormatToLabel(Format: Integer): WideString;
 
+		{Cache helpers}
+		function GetResolvedCacheDir: WideString;
+		function FormatCacheSize(SizeBytes: Int64): WideString;
+		function CalculateDirSize(const Dir: WideString; const Mask: WideString): Int64;
+		procedure RefreshCacheSizes;
+
 		{Servers tab helpers}
 		procedure SetServerDirty(Value: Boolean);
 		procedure LoadServerProfileToView(const ProfileName: WideString);
@@ -447,6 +457,7 @@ type
 		{Cache operations}
 		procedure OnClearCacheClick;
 		procedure OnClearFileCacheClick;
+		procedure OnCacheDirChanged;
 
 		{Translation operations}
 		procedure LoadTranslationSettingsToView;
@@ -641,16 +652,22 @@ begin
 		{File history settings}
 		FView.SetFileHistoryEnabled(Settings.FileHistoryEnabled);
 
+		{Cache directory: always show resolved path in the edit}
+		FView.SetCacheDir(Settings.ListingCacheDir);
+		if FView.GetCacheDir = '' then
+			FView.SetCacheDir(GetResolvedCacheDir);
+
 		{Listing cache settings}
 		FView.SetCacheEnabled(Settings.CacheListings);
 		FView.SetCacheTTL(Settings.ListingCacheTTL);
 		FView.SetCacheMaxSizeMB(Settings.ListingCacheMaxSizeMB);
-		FView.SetCacheDir(Settings.ListingCacheDir);
 
 		{File cache settings}
 		FView.SetFileCacheEnabled(Settings.FileCacheEnabled);
 		FView.SetFileCacheTTL(Settings.FileCacheTTL);
 		FView.SetFileCacheMaxSizeMB(Settings.FileCacheMaxSizeMB);
+
+		RefreshCacheSizes;
 	finally
 		FGlobalSettingsUpdating := False;
 	end;
@@ -1971,21 +1988,73 @@ begin
 	OnFieldChanged;
 end;
 
+{Cache helpers}
+
+function TAccountsPresenter.GetResolvedCacheDir: WideString;
+var
+	CustomDir: WideString;
+begin
+	CustomDir := FView.GetCacheDir;
+	if CustomDir <> '' then
+		Result := IncludeTrailingPathDelimiter(CustomDir)
+	else
+		Result := IncludeTrailingPathDelimiter(
+			IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) + 'CloudMailRu\cache');
+end;
+
+function TAccountsPresenter.FormatCacheSize(SizeBytes: Int64): WideString;
+begin
+	if SizeBytes < 1024 then
+		Result := IntToStr(SizeBytes) + ' B'
+	else if SizeBytes < 1024 * 1024 then
+		Result := Format('%.1f KB', [SizeBytes / 1024.0])
+	else if SizeBytes < Int64(1024) * 1024 * 1024 then
+		Result := Format('%.1f MB', [SizeBytes / (1024.0 * 1024.0)])
+	else
+		Result := Format('%.2f GB', [SizeBytes / (1024.0 * 1024.0 * 1024.0)]);
+end;
+
+function TAccountsPresenter.CalculateDirSize(const Dir: WideString; const Mask: WideString): Int64;
+var
+	SR: TSearchRec;
+begin
+	Result := 0;
+	if not DirectoryExists(Dir) then
+		Exit;
+	if FindFirst(Dir + Mask, faAnyFile, SR) = 0 then
+	begin
+		repeat
+			Result := Result + SR.Size;
+		until FindNext(SR) <> 0;
+		FindClose(SR);
+	end;
+end;
+
+procedure TAccountsPresenter.RefreshCacheSizes;
+var
+	CacheDir: WideString;
+	ListingSize, FileSize: Int64;
+begin
+	CacheDir := GetResolvedCacheDir;
+	ListingSize := CalculateDirSize(CacheDir, '*.json');
+	FView.SetListingCacheSize(Format(DFM_LBL_LISTING_CACHE_SIZE, [FormatCacheSize(ListingSize)]));
+	FileSize := CalculateDirSize(CacheDir + 'files\', '*.dat');
+	FView.SetFileCacheSize(Format(DFM_LBL_FILE_CACHE_SIZE, [FormatCacheSize(FileSize)]));
+end;
+
 {Cache operations}
+
+procedure TAccountsPresenter.OnCacheDirChanged;
+begin
+	RefreshCacheSizes;
+end;
 
 procedure TAccountsPresenter.OnClearCacheClick;
 var
-	Settings: TPluginSettings;
 	CacheDir: WideString;
 	Cache: IDirectoryCache;
 begin
-	Settings := FSettingsManager.GetSettings;
-	if Settings.ListingCacheDir <> '' then
-		CacheDir := IncludeTrailingPathDelimiter(Settings.ListingCacheDir)
-	else
-		CacheDir := IncludeTrailingPathDelimiter(
-			IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) + 'CloudMailRu\cache');
-
+	CacheDir := GetResolvedCacheDir;
 	try
 		Cache := TDiskDirectoryCache.Create(CacheDir, 0, 0);
 		Cache.InvalidateAll;
@@ -1994,21 +2063,15 @@ begin
 		on E: Exception do
 			FView.SetCacheStatus(Format(DFM_CACHE_CLEAR_ERROR, [E.Message]));
 	end;
+	RefreshCacheSizes;
 end;
 
 procedure TAccountsPresenter.OnClearFileCacheClick;
 var
-	Settings: TPluginSettings;
 	CacheDir: WideString;
 	Cache: IFileCache;
 begin
-	Settings := FSettingsManager.GetSettings;
-	if Settings.ListingCacheDir <> '' then
-		CacheDir := IncludeTrailingPathDelimiter(Settings.ListingCacheDir)
-	else
-		CacheDir := IncludeTrailingPathDelimiter(
-			IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) + 'CloudMailRu\cache');
-
+	CacheDir := GetResolvedCacheDir;
 	try
 		Cache := TDiskFileCache.Create(CacheDir + 'files\', 0, 0);
 		Cache.InvalidateAll;
@@ -2017,6 +2080,7 @@ begin
 		on E: Exception do
 			FView.SetFileCacheStatus(Format(DFM_FILE_CACHE_CLEAR_ERROR, [E.Message]));
 	end;
+	RefreshCacheSizes;
 end;
 
 {Translation operations}
