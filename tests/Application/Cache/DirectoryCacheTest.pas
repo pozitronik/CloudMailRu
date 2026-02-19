@@ -20,6 +20,8 @@ type
 		function MakeListing(Count: Integer): TCloudDirItemList;
 		{Recursively deletes a directory and its contents}
 		procedure DeleteCacheDir;
+		{Returns the cache dir hash filename (without extension) for a given path}
+		function HashForPath(const Path: WideString): WideString;
 	public
 		[Setup]
 		procedure Setup;
@@ -39,12 +41,20 @@ type
 		procedure Test_TTL_Expiration;
 
 		[Test]
+		{TTL expiration deletes both .json and .meta files from disk}
+		procedure Test_TTL_Expiration_CleansUpFiles;
+
+		[Test]
 		{InvalidatePath removes specific entry}
 		procedure Test_InvalidatePath_RemovesEntry;
 
 		[Test]
 		{InvalidateAll clears everything}
 		procedure Test_InvalidateAll_ClearsAll;
+
+		[Test]
+		{InvalidateAll on empty cache completes without error}
+		procedure Test_InvalidateAll_EmptyCache_NoError;
 
 		[Test]
 		{TryGet returns a copy -- modifying returned array does not affect cache}
@@ -69,6 +79,34 @@ type
 		[Test]
 		{Size eviction: oldest entries are evicted when over MaxSizeMB limit}
 		procedure Test_SizeEviction_RemovesOldestEntries;
+
+		[Test]
+		{TryGet with missing .json but existing .meta cleans up orphaned meta}
+		procedure Test_TryGet_MissingDataFile_CleansUpMeta;
+
+		[Test]
+		{TryGet with corrupted JSON deletes the entry}
+		procedure Test_TryGet_CorruptedJSON_DeletesEntry;
+
+		[Test]
+		{TryGet with corrupted meta (empty Path) returns False}
+		procedure Test_TryGet_CorruptedMeta_ReturnsFalse;
+
+		[Test]
+		{PutThenGet preserves all TCloudDirItem fields through serialization}
+		procedure Test_PutThenGet_PreservesAllFields;
+
+		[Test]
+		{Eviction stops mid-loop once total drops below limit (Break path)}
+		procedure Test_SizeEviction_BreaksMidLoop;
+
+		[Test]
+		{Eviction skips entries whose .meta is corrupt (ReadMeta returns False)}
+		procedure Test_SizeEviction_SkipsCorruptMeta;
+
+		[Test]
+		{Eviction comparator handles entries with identical ExpiresAt}
+		procedure Test_SizeEviction_SameExpiresAt;
 	end;
 
 	[TestFixture]
@@ -94,7 +132,7 @@ type
 implementation
 
 uses
-	IOUtils;
+	IOUtils, Classes, DateUtils, System.Hash;
 
 {TDiskDirectoryCacheTest}
 
@@ -113,6 +151,11 @@ begin
 		Item.home := '/test/file_' + IntToStr(I);
 		Result[I] := Item;
 	end;
+end;
+
+function TDiskDirectoryCacheTest.HashForPath(const Path: WideString): WideString;
+begin
+	Result := THashMD5.GetHashString(string(WideLowerCase(Path)));
 end;
 
 procedure TDiskDirectoryCacheTest.DeleteCacheDir;
@@ -184,6 +227,39 @@ begin
 	end;
 end;
 
+procedure TDiskDirectoryCacheTest.Test_TTL_Expiration_CleansUpFiles;
+var
+	ShortTTLCache: TDiskDirectoryCache;
+	Listing, Retrieved: TCloudDirItemList;
+	ShortCacheDir: WideString;
+	Hash: WideString;
+	GUID: TGUID;
+begin
+	CreateGUID(GUID);
+	ShortCacheDir := IncludeTrailingPathDelimiter(TPath.GetTempPath) + 'CloudMailRuCacheTest_TTLClean_' + GUIDToString(GUID);
+	ShortTTLCache := TDiskDirectoryCache.Create(ShortCacheDir, 1, 50);
+	try
+		Listing := MakeListing(1);
+		ShortTTLCache.Put('\cleanup\path', Listing);
+		Hash := HashForPath('\cleanup\path');
+
+		Assert.IsTrue(FileExists(IncludeTrailingPathDelimiter(ShortCacheDir) + Hash + '.json'), 'JSON file should exist after Put');
+		Assert.IsTrue(FileExists(IncludeTrailingPathDelimiter(ShortCacheDir) + Hash + '.meta'), 'Meta file should exist after Put');
+
+		Sleep(1100);
+
+		{TryGet on expired entry triggers cleanup}
+		ShortTTLCache.TryGet('\cleanup\path', Retrieved);
+
+		Assert.IsFalse(FileExists(IncludeTrailingPathDelimiter(ShortCacheDir) + Hash + '.json'), 'JSON file should be deleted after expiry');
+		Assert.IsFalse(FileExists(IncludeTrailingPathDelimiter(ShortCacheDir) + Hash + '.meta'), 'Meta file should be deleted after expiry');
+	finally
+		ShortTTLCache.Free;
+		if DirectoryExists(ShortCacheDir) then
+			TDirectory.Delete(ShortCacheDir, True);
+	end;
+end;
+
 procedure TDiskDirectoryCacheTest.Test_InvalidatePath_RemovesEntry;
 var
 	Listing, Retrieved: TCloudDirItemList;
@@ -212,6 +288,13 @@ begin
 	Assert.IsFalse(FCache.TryGet('\account\dir1', Retrieved));
 	Assert.IsFalse(FCache.TryGet('\account\dir2', Retrieved));
 	Assert.IsFalse(FCache.TryGet('\account\dir3', Retrieved));
+end;
+
+procedure TDiskDirectoryCacheTest.Test_InvalidateAll_EmptyCache_NoError;
+begin
+	{Should not raise on a cache with no entries}
+	FCache.InvalidateAll;
+	Assert.Pass('InvalidateAll on empty cache should not raise');
 end;
 
 procedure TDiskDirectoryCacheTest.Test_TryGet_ReturnsCopy;
@@ -322,6 +405,283 @@ begin
 		SmallCache.Free;
 		if DirectoryExists(SmallCacheDir) then
 			TDirectory.Delete(SmallCacheDir, True);
+	end;
+end;
+
+procedure TDiskDirectoryCacheTest.Test_TryGet_MissingDataFile_CleansUpMeta;
+var
+	Listing, Retrieved: TCloudDirItemList;
+	Hash, CacheDir: WideString;
+begin
+	Listing := MakeListing(2);
+	FCache.Put('\orphan\path', Listing);
+	Hash := HashForPath('\orphan\path');
+	CacheDir := IncludeTrailingPathDelimiter(FCacheDir);
+
+	{Delete the .json data file, leaving .meta orphaned}
+	Assert.IsTrue(DeleteFile(CacheDir + Hash + '.json'), 'Should delete JSON file');
+	Assert.IsTrue(FileExists(CacheDir + Hash + '.meta'), 'Meta should still exist');
+
+	{TryGet should return False and clean up the orphaned .meta}
+	Assert.IsFalse(FCache.TryGet('\orphan\path', Retrieved), 'Should miss when data file is gone');
+	Assert.IsFalse(FileExists(CacheDir + Hash + '.meta'), 'Orphaned meta should be cleaned up');
+end;
+
+procedure TDiskDirectoryCacheTest.Test_TryGet_CorruptedJSON_DeletesEntry;
+var
+	Listing, Retrieved: TCloudDirItemList;
+	Hash, CacheDir, JsonPath: WideString;
+	Writer: TStreamWriter;
+begin
+	Listing := MakeListing(2);
+	FCache.Put('\corrupt\path', Listing);
+	Hash := HashForPath('\corrupt\path');
+	CacheDir := IncludeTrailingPathDelimiter(FCacheDir);
+	JsonPath := CacheDir + Hash + '.json';
+
+	{Overwrite .json with garbage}
+	Writer := TStreamWriter.Create(JsonPath, False, TEncoding.UTF8);
+	try
+		Writer.Write('NOT VALID JSON AT ALL');
+	finally
+		Writer.Free;
+	end;
+
+	{TryGet should return False and clean up the corrupt entry}
+	Assert.IsFalse(FCache.TryGet('\corrupt\path', Retrieved), 'Should return False for corrupted JSON');
+	Assert.IsFalse(FileExists(JsonPath), 'Corrupted JSON file should be deleted');
+	Assert.IsFalse(FileExists(CacheDir + Hash + '.meta'), 'Meta for corrupted entry should be deleted');
+end;
+
+procedure TDiskDirectoryCacheTest.Test_TryGet_CorruptedMeta_ReturnsFalse;
+var
+	Listing, Retrieved: TCloudDirItemList;
+	Hash, CacheDir, MetaPath: WideString;
+	Writer: TStreamWriter;
+begin
+	Listing := MakeListing(1);
+	FCache.Put('\badmeta\path', Listing);
+	Hash := HashForPath('\badmeta\path');
+	CacheDir := IncludeTrailingPathDelimiter(FCacheDir);
+	MetaPath := CacheDir + Hash + '.meta';
+
+	{Overwrite .meta with content that has no Path= line (ReadMeta returns False)}
+	Writer := TStreamWriter.Create(MetaPath, False, TEncoding.UTF8);
+	try
+		Writer.Write('ExpiresAt=99999999.0' + sLineBreak + 'DataSize=100');
+	finally
+		Writer.Free;
+	end;
+
+	{ReadMeta should return False because Path is empty}
+	Assert.IsFalse(FCache.TryGet('\badmeta\path', Retrieved), 'Should return False for meta without Path');
+end;
+
+procedure TDiskDirectoryCacheTest.Test_PutThenGet_PreservesAllFields;
+var
+	Items: TCloudDirItemList;
+	Retrieved: TCloudDirItemList;
+begin
+	SetLength(Items, 2);
+
+	{File item: hash, mtime, weblink are serialized}
+	Items[0] := Default(TCloudDirItem);
+	Items[0].name := 'document.pdf';
+	Items[0].type_ := 'file';
+	Items[0].home := '/docs/document.pdf';
+	Items[0].size := 123456;
+	Items[0].hash := 'ABCDEF0123456789';
+	Items[0].mtime := 1700000000;
+	Items[0].weblink := 'public/abc123';
+
+	{Folder item: tree, folders_count, files_count are serialized}
+	Items[1] := Default(TCloudDirItem);
+	Items[1].name := 'subdir';
+	Items[1].type_ := 'folder';
+	Items[1].home := '/docs/subdir';
+	Items[1].size := 0;
+	Items[1].tree := '/docs';
+	Items[1].folders_count := 3;
+	Items[1].files_count := 15;
+
+	FCache.Put('\docs', Items);
+	Assert.IsTrue(FCache.TryGet('\docs', Retrieved));
+	Assert.AreEqual(2, Integer(Length(Retrieved)));
+
+	{Verify file fields}
+	Assert.AreEqual(WideString('document.pdf'), Retrieved[0].name);
+	Assert.AreEqual(WideString('file'), Retrieved[0].type_);
+	Assert.AreEqual(WideString('/docs/document.pdf'), Retrieved[0].home);
+	Assert.AreEqual(Int64(123456), Retrieved[0].size);
+	Assert.AreEqual(WideString('ABCDEF0123456789'), Retrieved[0].hash);
+	Assert.AreEqual(Int64(1700000000), Retrieved[0].mtime);
+	Assert.AreEqual(WideString('public/abc123'), Retrieved[0].weblink);
+
+	{Verify folder fields}
+	Assert.AreEqual(WideString('subdir'), Retrieved[1].name);
+	Assert.AreEqual(WideString('folder'), Retrieved[1].type_);
+	Assert.AreEqual(WideString('/docs/subdir'), Retrieved[1].home);
+	Assert.AreEqual(WideString('/docs'), Retrieved[1].tree);
+	Assert.AreEqual(3, Retrieved[1].folders_count);
+	Assert.AreEqual(15, Retrieved[1].files_count);
+end;
+
+procedure TDiskDirectoryCacheTest.Test_SizeEviction_BreaksMidLoop;
+var
+	TinyCache: TDiskDirectoryCache;
+	TinyCacheDir, CDir: WideString;
+	GUID: TGUID;
+	Listing, Retrieved: TCloudDirItemList;
+	I: Integer;
+	SurvivedCount: Integer;
+begin
+	// Create cache with 1 MB limit, add entries that collectively exceed it,
+	// but not all entries need to be evicted to get back under the limit.
+	// This exercises the Break path at line 232-233 of EvictIfOverSize.
+	CreateGUID(GUID);
+	TinyCacheDir := IncludeTrailingPathDelimiter(TPath.GetTempPath) + 'CloudMailRuCacheTest_MidLoop_' + GUIDToString(GUID);
+	TinyCache := TDiskDirectoryCache.Create(TinyCacheDir, 3600, 1);
+	try
+		// Put 20 listings with 500 items each (~20-30KB each); total > 1 MB
+		for I := 1 to 20 do
+		begin
+			Listing := MakeListing(500);
+			TinyCache.Put('\dir' + IntToStr(I), Listing);
+			Sleep(15); // ensure distinct ExpiresAt ordering
+		end;
+
+		// After eviction, some entries should survive (Break mid-loop),
+		// while earliest should be gone
+		SurvivedCount := 0;
+		for I := 1 to 20 do
+		begin
+			if TinyCache.TryGet('\dir' + IntToStr(I), Retrieved) then
+				Inc(SurvivedCount);
+		end;
+
+		Assert.IsTrue(SurvivedCount > 0, 'Some entries should survive eviction');
+		Assert.IsTrue(SurvivedCount < 20, 'Not all entries should survive -- some must be evicted');
+		// Most recent entry should definitely survive
+		Assert.IsTrue(TinyCache.TryGet('\dir20', Retrieved), 'Most recent entry should survive');
+	finally
+		TinyCache.Free;
+		if DirectoryExists(TinyCacheDir) then
+			TDirectory.Delete(TinyCacheDir, True);
+	end;
+end;
+
+procedure TDiskDirectoryCacheTest.Test_SizeEviction_SkipsCorruptMeta;
+var
+	TinyCache: TDiskDirectoryCache;
+	TinyCacheDir, CDir, Hash: WideString;
+	GUID: TGUID;
+	Listing, Retrieved: TCloudDirItemList;
+	Writer: TStreamWriter;
+	I: Integer;
+begin
+	// Create cache, add entries that exceed the limit.
+	// Corrupt one .meta file so ReadMeta returns False during eviction scan.
+	// Eviction should skip the corrupt entry and still evict valid old entries.
+	CreateGUID(GUID);
+	TinyCacheDir := IncludeTrailingPathDelimiter(TPath.GetTempPath) + 'CloudMailRuCacheTest_CorruptEvict_' + GUIDToString(GUID);
+	TinyCache := TDiskDirectoryCache.Create(TinyCacheDir, 3600, 1);
+	try
+		CDir := IncludeTrailingPathDelimiter(TinyCacheDir);
+
+		// Put several entries to fill cache
+		for I := 1 to 15 do
+		begin
+			Listing := MakeListing(500);
+			TinyCache.Put('\evdir' + IntToStr(I), Listing);
+			Sleep(15);
+		end;
+
+		// Corrupt the meta for one of the middle entries (no Path= line)
+		Hash := HashForPath('\evdir8');
+		Writer := TStreamWriter.Create(CDir + Hash + '.meta', False, TEncoding.UTF8);
+		try
+			Writer.Write('SomeGarbage=value' + sLineBreak + 'MoreGarbage=123');
+		finally
+			Writer.Free;
+		end;
+
+		// Add one more entry to trigger eviction again
+		Listing := MakeListing(500);
+		TinyCache.Put('\evdir_final', Listing);
+
+		// The final entry should survive eviction
+		Assert.IsTrue(TinyCache.TryGet('\evdir_final', Retrieved),
+			'Final entry should survive eviction even with corrupt meta in the mix');
+	finally
+		TinyCache.Free;
+		if DirectoryExists(TinyCacheDir) then
+			TDirectory.Delete(TinyCacheDir, True);
+	end;
+end;
+
+procedure TDiskDirectoryCacheTest.Test_SizeEviction_SameExpiresAt;
+var
+	TinyCache: TDiskDirectoryCache;
+	TinyCacheDir, CDir, Hash: WideString;
+	GUID: TGUID;
+	Listing, Retrieved: TCloudDirItemList;
+	Writer: TStreamWriter;
+	MetaLines: TStringList;
+	SharedExpiry: string;
+	I: Integer;
+	SurvivedCount: Integer;
+begin
+	// Create entries with identical ExpiresAt to exercise the comparator Result := 0 branch.
+	// We manually write meta files with the same ExpiresAt value.
+	CreateGUID(GUID);
+	TinyCacheDir := IncludeTrailingPathDelimiter(TPath.GetTempPath) + 'CloudMailRuCacheTest_SameExpiry_' + GUIDToString(GUID);
+	TinyCache := TDiskDirectoryCache.Create(TinyCacheDir, 3600, 1);
+	try
+		CDir := IncludeTrailingPathDelimiter(TinyCacheDir);
+		SharedExpiry := FloatToStr(Now + 3600 / SecsPerDay);
+
+		// Put entries normally first (to create .json files)
+		for I := 1 to 15 do
+		begin
+			Listing := MakeListing(500);
+			TinyCache.Put('\samedir' + IntToStr(I), Listing);
+		end;
+
+		// Overwrite all .meta files with identical ExpiresAt
+		for I := 1 to 15 do
+		begin
+			Hash := HashForPath('\samedir' + IntToStr(I));
+			MetaLines := TStringList.Create;
+			try
+				MetaLines.Add('Path=' + WideLowerCase('\samedir' + IntToStr(I)));
+				MetaLines.Add('ExpiresAt=' + SharedExpiry);
+				MetaLines.Add('DataSize=30000');
+				MetaLines.SaveToFile(CDir + Hash + '.meta', TEncoding.UTF8);
+			finally
+				MetaLines.Free;
+			end;
+		end;
+
+		// Add one more entry to trigger eviction (this one gets a new ExpiresAt)
+		Listing := MakeListing(500);
+		TinyCache.Put('\samedir_trigger', Listing);
+
+		// Eviction should work without errors even when all ExpiresAt are equal
+		// At least the trigger entry should survive
+		SurvivedCount := 0;
+		for I := 1 to 15 do
+		begin
+			if TinyCache.TryGet('\samedir' + IntToStr(I), Retrieved) then
+				Inc(SurvivedCount);
+		end;
+		Assert.IsTrue(SurvivedCount < 15,
+			'Some entries with same ExpiresAt should be evicted');
+		Assert.IsTrue(TinyCache.TryGet('\samedir_trigger', Retrieved),
+			'Trigger entry should survive');
+	finally
+		TinyCache.Free;
+		if DirectoryExists(TinyCacheDir) then
+			TDirectory.Delete(TinyCacheDir, True);
 	end;
 end;
 
