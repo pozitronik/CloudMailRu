@@ -390,7 +390,6 @@ end;
 procedure TCloudDirItemListJsonAdapterTest.TestToJSON_ListRoundtrip;
 var
 	Items, Parsed: TCloudDirItemList;
-	I: Integer;
 	JSON: WideString;
 begin
 	{Build a 3-item list with mixed files and a folder}
