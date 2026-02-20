@@ -65,6 +65,7 @@ type
 
 		{Cookie manager access}
 		procedure SetAuthCookie(Value: TIdCookieManager);
+		function GetAuthCookie: TIdCookieManager;
 
 		{Set CSRF token for authenticated requests}
 		procedure SetCSRFToken(const Token: WideString);
@@ -72,7 +73,7 @@ type
 		{Access to underlying HTTP for header manipulation}
 		function GetHTTP: TIdHTTP;
 
-		property AuthCookie: TIdCookieManager write SetAuthCookie;
+		property AuthCookie: TIdCookieManager read GetAuthCookie write SetAuthCookie;
 		property HTTP: TIdHTTP read GetHTTP;
 	end;
 
@@ -86,6 +87,7 @@ type
 		procedure SetProgressNames(SourceName, TargetName: WideString);
 		procedure SetProgress(Progress: IProgress);
 		procedure SetAuthCookie(Value: TIdCookieManager);
+		function GetAuthCookie: TIdCookieManager;
 		procedure SetCSRFToken(const Token: WideString);
 		function GetHTTP: TIdHTTP;
 	end;
@@ -112,6 +114,7 @@ type
 
 		{ICloudHTTP interface methods}
 		procedure SetAuthCookie(Value: TIdCookieManager);
+		function GetAuthCookie: TIdCookieManager;
 		procedure SetCSRFToken(const Token: WideString);
 		function GetHTTP: TIdHTTP;
 
@@ -119,7 +122,7 @@ type
 		{PROPERTIES}
 		HTTP: TIdHTTP;
 		Property Options: TConnectionSettings read Settings;
-		Property AuthCookie: TIdCookieManager write SetCookie; {Managed externally for auth sharing between connections}
+		Property AuthCookie: TIdCookieManager read GetAuthCookie write SetCookie; {Managed externally for auth sharing between connections}
 		property SourceName: WideString write SetExternalSourceName;
 		property TargetName: WideString write SetExternalTargetName;
 		{CONSTRUCTOR/DESTRUCTOR}
@@ -189,6 +192,11 @@ begin
 	{No-op}
 end;
 
+function TNullCloudHTTP.GetAuthCookie: TIdCookieManager;
+begin
+	Result := nil;
+end;
+
 procedure TNullCloudHTTP.SetCSRFToken(const Token: WideString);
 begin
 	{No-op}
@@ -224,6 +232,7 @@ begin
 
 	HTTP.IOHandler := SSL;
 	HTTP.AllowCookies := True;
+	HTTP.CookieManager := TIdCookieManager.Create(HTTP);
 	HTTP.HTTPOptions := [hoForceEncodeParams, hoNoParseMetaHTTPEquiv, hoKeepOrigProtocol, hoTreat302Like303];
 	HTTP.HandleRedirects := True;
 	if (Settings.SocketTimeout <> 0) then
@@ -474,6 +483,11 @@ end;
 procedure TCloudMailRuHTTP.SetAuthCookie(Value: TIdCookieManager);
 begin
 	self.HTTP.CookieManager := Value;
+end;
+
+function TCloudMailRuHTTP.GetAuthCookie: TIdCookieManager;
+begin
+	Result := self.HTTP.CookieManager;
 end;
 
 function TCloudMailRuHTTP.GetHTTP: TIdHTTP;

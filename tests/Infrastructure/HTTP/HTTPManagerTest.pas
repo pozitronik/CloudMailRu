@@ -34,6 +34,7 @@ type
 		procedure SetProgressNames(SourceName, TargetName: WideString);
 		procedure SetProgress(Progress: IProgress);
 		procedure SetAuthCookie(Value: TIdCookieManager);
+		function GetAuthCookie: TIdCookieManager;
 		procedure SetCSRFToken(const Token: WideString);
 		function GetHTTP: TIdHTTP;
 	end;
@@ -170,6 +171,11 @@ end;
 
 procedure TMockHTTPForPooling.SetAuthCookie(Value: TIdCookieManager);
 begin
+end;
+
+function TMockHTTPForPooling.GetAuthCookie: TIdCookieManager;
+begin
+	Result := nil;
 end;
 
 procedure TMockHTTPForPooling.SetCSRFToken(const Token: WideString);

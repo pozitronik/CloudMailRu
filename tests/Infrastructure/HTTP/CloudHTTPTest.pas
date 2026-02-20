@@ -88,6 +88,8 @@ type
 		{SetAuthCookie tests}
 		[Test]
 		procedure TestSetAuthCookie_DoesNotRaiseException;
+		[Test]
+		procedure TestGetAuthCookie_ReturnsNil;
 
 		{GetHTTP tests}
 		[Test]
@@ -522,6 +524,11 @@ begin
 	finally
 		CookieManager.Free;
 	end;
+end;
+
+procedure TNullCloudHTTPTest.TestGetAuthCookie_ReturnsNil;
+begin
+	Assert.IsNull(FHTTP.GetAuthCookie);
 end;
 
 procedure TNullCloudHTTPTest.TestGetHTTP_ReturnsNil;

@@ -127,6 +127,8 @@ type
 		FAccountName: WideString;
 		FEmail: WideString;
 		FPassword: WideString;
+		FAuthMethod: Integer;
+		FPasswordControlsVisible: Boolean;
 		FUseTCPasswordManager: Boolean;
 		FUnlimitedFileSize: Boolean;
 		FSplitLargeFiles: Boolean;
@@ -360,6 +362,9 @@ type
 		function GetEmail: WideString;
 		procedure SetPassword(Value: WideString);
 		function GetPassword: WideString;
+		procedure SetAuthMethod(Value: Integer);
+		function GetAuthMethod: Integer;
+		procedure SetPasswordControlsVisible(Value: Boolean);
 		procedure SetUseTCPasswordManager(Value: Boolean);
 		function GetUseTCPasswordManager: Boolean;
 		procedure SetUnlimitedFileSize(Value: Boolean);
@@ -1572,6 +1577,21 @@ end;
 function TMockAccountsView.GetPassword: WideString;
 begin
 	Result := FPassword;
+end;
+
+procedure TMockAccountsView.SetAuthMethod(Value: Integer);
+begin
+	FAuthMethod := Value;
+end;
+
+function TMockAccountsView.GetAuthMethod: Integer;
+begin
+	Result := FAuthMethod;
+end;
+
+procedure TMockAccountsView.SetPasswordControlsVisible(Value: Boolean);
+begin
+	FPasswordControlsVisible := Value;
 end;
 
 procedure TMockAccountsView.SetUseTCPasswordManager(Value: Boolean);

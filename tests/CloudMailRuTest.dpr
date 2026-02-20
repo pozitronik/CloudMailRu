@@ -163,6 +163,8 @@ uses
 	NullAuthStrategyTest in 'Infrastructure\Authentication\NullAuthStrategyTest.pas',
 	OAuthAppAuthStrategy in '..\src\Infrastructure\Authentication\OAuthAppAuthStrategy.pas',
 	OAuthAppAuthStrategyTest in 'Infrastructure\Authentication\OAuthAppAuthStrategyTest.pas',
+	VKIDAuthStrategy in '..\src\Infrastructure\Authentication\VKIDAuthStrategy.pas',
+	VKIDLogin in '..\src\Presentation\UI\Forms\VKIDLogin.pas' {VKIDLoginForm} ,
 	MockCloudHTTP in 'mocks\MockCloudHTTP.pas',
 	MockCloudContext in 'mocks\MockCloudContext.pas',
 	MockHTTPManager in 'mocks\MockHTTPManager.pas',

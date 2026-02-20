@@ -93,6 +93,7 @@ type
 		function ReAuthenticate: Boolean;
 	protected
 		FDoCryptFiles: Boolean;
+		FCookieBasedAuth: Boolean; {True when using VK ID cookie-based authentication}
 		FPublicLink: WideString; {Holder for GetPublicLink() value - protected for testability}
 		FUnitedParams: WideString; {The set of required authentification attributes united to the string}
 
@@ -251,7 +252,11 @@ end;
 
 function TCloudMailRu.GetOAuthAccessToken: WideString;
 begin
-	Result := FOAuthToken.access_token;
+	{In cookie mode, downloads/uploads use the CSRF token (always latest) instead of OAuth token}
+	if FCookieBasedAuth then
+		Result := FAuthToken
+	else
+		Result := FOAuthToken.access_token;
 end;
 
 function TCloudMailRu.RefreshToken: Boolean;
@@ -409,9 +414,16 @@ begin
 	HTTP.GetPage(FSettings.Endpoints.ApiCsrf, JSON, Progress);
 	Result := getBodyToken(JSON, FAuthToken);
 	if Result then
-		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, TOKEN_UPDATED)
-	else
-		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_TOKEN_UPDATE)
+	begin
+		{In cookie mode, CSRF token is the universal token for all operations}
+		if FCookieBasedAuth then
+		begin
+			FOAuthToken.access_token := FAuthToken;
+			FUnitedParams := 'token=' + FAuthToken;
+		end;
+		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, TOKEN_UPDATED);
+	end else
+		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_TOKEN_UPDATE);
 end;
 
 function TCloudMailRu.PerformAuthentication: Boolean;
@@ -428,6 +440,7 @@ begin
 		FAuthToken := AuthResult.AuthToken;
 		FOAuthToken := AuthResult.OAuthToken;
 		FUnitedParams := AuthResult.UnitedParams;
+		FCookieBasedAuth := AuthResult.CookieBased;
 		FAuthorizationError := TAuthorizationError.Empty;
 		Result := True;
 	end else
@@ -530,8 +543,9 @@ begin
 	FAuthorizationState := asAuthorizing;
 	FAuthorizationError := TAuthorizationError.Empty;
 
-	{For non-public accounts, retrieve password via provider before login}
-	if not IsPublicAccount then
+	{For non-public accounts, retrieve password via provider before login.
+		VK ID mode does not need a stored password -- the user enters credentials in the browser.}
+	if (not IsPublicAccount) and (FSettings.AccountSettings.AuthMethod <> CLOUD_AUTH_METHOD_VKID) then
 	begin
 		if not FAccountCredentialsProvider.GetPassword(FSettings.AccountSettings.Account, FSettings.AccountSettings) then
 		begin

@@ -191,8 +191,8 @@ begin
 	{Resolve cipher - returns real cipher or null cipher depending on encryption settings}
 	Cipher := FFileEncryptionResolver.ResolveCipher(ConnectionName, CloudSettings);
 
-	{Create appropriate auth strategy via factory - enables DI and testability}
-	AuthStrategy := FAuthStrategyFactory.CreateDefaultStrategy;
+	{Create appropriate auth strategy via factory - dispatches by account's auth method}
+	AuthStrategy := FAuthStrategyFactory.CreateStrategy(AccountSettingsData.AuthMethod);
 
 	{Create cloud instance - authorization happens later via Cloud.Authorize()}
 	Result := TCloudMailRu.Create(CloudSettings, FHTTPManager, function: TThreadID begin Result := GetCurrentThreadID; end, AuthStrategy, FFileSystem, FLogger, FProgress, FRequest, FTCHandler, Cipher, FOpenSSLProvider, FAccountCredentialsProvider);

@@ -88,6 +88,7 @@ const
 
 	{Authentication method}
 	CLOUD_AUTH_METHOD_OAUTH_APP = 4; {OAuth with app password (recommended)}
+	CLOUD_AUTH_METHOD_VKID = 5; {VK ID browser login (cookie-based auth)}
 
 	{OAuth client credentials for app password auth}
 	OAUTH_CLIENT_ID = 'cloud-win';

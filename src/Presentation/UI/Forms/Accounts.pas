@@ -110,6 +110,8 @@ type
 		PrivateRB: TRadioButton;
 		PublicRB: TRadioButton;
 		AccountsPanel: TPanel;
+		AuthMethodLabel: TLabel;
+		AuthMethodCombo: TComboBox;
 		EmailLabel: TLabel;
 		EmailEdit: TEdit;
 		PasswordLabel: TLabel;
@@ -236,6 +238,7 @@ type
 		procedure CryptPasswordStorageComboChange(Sender: TObject);
 		procedure CipherProfileComboChange(Sender: TObject);
 		procedure EncryptFilesPwdButtonClick(Sender: TObject);
+		procedure AuthMethodComboChange(Sender: TObject);
 		procedure FieldChanged(Sender: TObject);
 		class function ShowAccounts(ParentWindow: HWND; PasswordManager: IPasswordManager; Account: WideString): Boolean;
 		procedure ProxyUserEditChange(Sender: TObject);
@@ -461,6 +464,9 @@ type
 		function GetCryptPasswordStorage: Integer;
 		procedure SetCryptPasswordStorageEnabled(Value: Boolean);
 		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
+		procedure SetAuthMethod(Value: Integer);
+		function GetAuthMethod: Integer;
+		procedure SetPasswordControlsVisible(Value: Boolean);
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
@@ -1448,6 +1454,30 @@ begin
 	EncryptFilesPwdButton.Enabled := Value;
 end;
 
+procedure TAccountsForm.SetAuthMethod(Value: Integer);
+begin
+	if Value = CLOUD_AUTH_METHOD_VKID then
+		AuthMethodCombo.ItemIndex := 1
+	else
+		AuthMethodCombo.ItemIndex := 0;
+end;
+
+function TAccountsForm.GetAuthMethod: Integer;
+begin
+	if AuthMethodCombo.ItemIndex = 1 then
+		Result := CLOUD_AUTH_METHOD_VKID
+	else
+		Result := CLOUD_AUTH_METHOD_OAUTH_APP;
+end;
+
+procedure TAccountsForm.SetPasswordControlsVisible(Value: Boolean);
+begin
+	PasswordLabel.Visible := Value;
+	PasswordEdit.Visible := Value;
+	UseTCPwdMngrCB.Visible := Value;
+	TestAccountButton.Visible := Value;
+end;
+
 procedure TAccountsForm.SetAccountsPanelVisible(Value: Boolean);
 begin
 	AccountsPanel.Visible := Value;
@@ -1824,6 +1854,11 @@ begin
 	FPresenter.OnEncryptPasswordClick;
 end;
 
+procedure TAccountsForm.AuthMethodComboChange(Sender: TObject);
+begin
+	FPresenter.OnAuthMethodChanged;
+end;
+
 procedure TAccountsForm.FieldChanged(Sender: TObject);
 begin
 	FPresenter.OnFieldChanged;
@@ -2113,6 +2148,8 @@ begin
 	AccountTypeGB.Caption := DFM_GB_ACCOUNT_TYPE;
 	PrivateRB.Caption := DFM_RB_PRIVATE;
 	PublicRB.Caption := DFM_RB_PUBLIC;
+	AuthMethodLabel.Caption := DFM_LBL_AUTH_METHOD;
+	RepopulateCombo(AuthMethodCombo, [DFM_OPT_AUTH_OAUTH, DFM_OPT_AUTH_VKID]);
 	UseTCPwdMngrCB.Caption := DFM_CB_TC_PASSWORD;
 	FileSizeGB.Caption := DFM_GB_FILE_SIZE;
 	UnlimitedFileSizeCB.Caption := DFM_CB_UNLIMITED_SIZE;

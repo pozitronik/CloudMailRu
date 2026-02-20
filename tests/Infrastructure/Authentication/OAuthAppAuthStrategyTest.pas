@@ -49,7 +49,11 @@ type
 
 		{Factory tests}
 		[Test]
-		procedure TestDefaultFactory_CreatesOAuthStrategy;
+		procedure TestFactory_OAuthMethod_CreatesOAuthStrategy;
+		[Test]
+		procedure TestFactory_VKIDMethod_CreatesVKIDStrategy;
+		[Test]
+		procedure TestFactory_UnknownMethod_CreatesOAuthStrategy;
 	end;
 
 implementation
@@ -57,6 +61,7 @@ implementation
 uses
 	SysUtils,
 	CloudConstants,
+	VKIDAuthStrategy,
 	Logger;
 
 {TOAuthAppAuthStrategyTest}
@@ -223,13 +228,40 @@ begin
 	Assert.IsFalse(Pos(WideString('username=admin@'), PostedData) > 0, 'Username should not have @ suffix when domain is empty');
 end;
 
-procedure TOAuthAppAuthStrategyTest.TestDefaultFactory_CreatesOAuthStrategy;
+procedure TOAuthAppAuthStrategyTest.TestFactory_OAuthMethod_CreatesOAuthStrategy;
 var
 	Factory: IAuthStrategyFactory;
 	Strategy: IAuthStrategy;
 begin
+	{OAuth auth method should create OAuth strategy}
 	Factory := TDefaultAuthStrategyFactory.Create;
-	Strategy := Factory.CreateDefaultStrategy;
+	Strategy := Factory.CreateStrategy(CLOUD_AUTH_METHOD_OAUTH_APP);
+
+	Assert.IsNotNull(Strategy);
+	Assert.AreEqual('OAuth App Password', Strategy.GetName);
+end;
+
+procedure TOAuthAppAuthStrategyTest.TestFactory_VKIDMethod_CreatesVKIDStrategy;
+var
+	Factory: IAuthStrategyFactory;
+	Strategy: IAuthStrategy;
+begin
+	{VK ID auth method should create VK ID strategy}
+	Factory := TDefaultAuthStrategyFactory.Create;
+	Strategy := Factory.CreateStrategy(CLOUD_AUTH_METHOD_VKID);
+
+	Assert.IsNotNull(Strategy);
+	Assert.AreEqual('VK ID Browser Login', Strategy.GetName);
+end;
+
+procedure TOAuthAppAuthStrategyTest.TestFactory_UnknownMethod_CreatesOAuthStrategy;
+var
+	Factory: IAuthStrategyFactory;
+	Strategy: IAuthStrategy;
+begin
+	{Unknown auth method should fall back to OAuth strategy}
+	Factory := TDefaultAuthStrategyFactory.Create;
+	Strategy := Factory.CreateStrategy(999);
 
 	Assert.IsNotNull(Strategy);
 	Assert.AreEqual('OAuth App Password', Strategy.GetName);

@@ -14,12 +14,14 @@ type
 	{Result of authentication attempt}
 	TAuthResult = record
 		Success: Boolean;
+		CookieBased: Boolean; {True when auth relies on cookies, not OAuth tokens}
 		AuthToken: WideString; {CSRF token or OAuth access_token}
 		OAuthToken: TCloudOAuth; {Full OAuth response structure}
 		UnitedParams: WideString; {Formatted API request parameters string}
 		ErrorMessage: WideString; {Error details if authentication failed}
 		class function CreateFailure(const Error: WideString): TAuthResult; static;
 		class function CreateOAuthSuccess(const OAuth: TCloudOAuth): TAuthResult; static;
+		class function CreateCookieSuccess(const CSRFToken: WideString): TAuthResult; static;
 	end;
 
 	{Authentication credentials container}
@@ -59,14 +61,15 @@ type
 		Enables dependency injection and testability of components that need auth strategies.}
 	IAuthStrategyFactory = interface
 		['{B8E4F6A3-7D2C-4E5B-9A1F-3C6D8E0B4F2A}']
-		{Creates the default authentication strategy for regular cloud accounts.}
-		function CreateDefaultStrategy: IAuthStrategy;
+		{Creates authentication strategy for the given auth method.
+			@param AuthMethod Authentication method constant (CLOUD_AUTH_METHOD_*)}
+		function CreateStrategy(AuthMethod: Integer): IAuthStrategy;
 	end;
 
 	{Null factory for testing - always returns TNullAuthStrategy.}
 	TNullAuthStrategyFactory = class(TInterfacedObject, IAuthStrategyFactory)
 	public
-		function CreateDefaultStrategy: IAuthStrategy;
+		function CreateStrategy(AuthMethod: Integer): IAuthStrategy;
 	end;
 
 implementation
@@ -90,6 +93,16 @@ begin
 	Result.OAuthToken := OAuth;
 	Result.AuthToken := OAuth.access_token;
 	Result.UnitedParams := Format('access_token=%s', [OAuth.access_token]);
+end;
+
+class function TAuthResult.CreateCookieSuccess(const CSRFToken: WideString): TAuthResult;
+begin
+	Result := Default (TAuthResult);
+	Result.Success := True;
+	Result.CookieBased := True;
+	Result.AuthToken := CSRFToken;
+	Result.OAuthToken.access_token := CSRFToken;
+	Result.UnitedParams := Format('token=%s', [CSRFToken]);
 end;
 
 {TAuthCredentials}
@@ -123,7 +136,7 @@ end;
 
 {TNullAuthStrategyFactory}
 
-function TNullAuthStrategyFactory.CreateDefaultStrategy: IAuthStrategy;
+function TNullAuthStrategyFactory.CreateStrategy(AuthMethod: Integer): IAuthStrategy;
 begin
 	Result := TNullAuthStrategy.Create;
 end;

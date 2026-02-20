@@ -44,7 +44,7 @@ type
 implementation
 
 uses
-	Windows;
+	Windows, SyncObjs;
 
 {TDiskFileCache}
 

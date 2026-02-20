@@ -44,6 +44,21 @@ type
 
 		[Test]
 		procedure TestCreateOAuthSuccess_FormatsUnitedParams;
+
+		[Test]
+		procedure TestCreateCookieSuccess_SetsSuccessTrue;
+		[Test]
+		procedure TestCreateCookieSuccess_SetsCookieBasedTrue;
+		[Test]
+		procedure TestCreateCookieSuccess_SetsAuthTokenFromCSRF;
+		[Test]
+		procedure TestCreateCookieSuccess_SetsOAuthAccessTokenFromCSRF;
+		[Test]
+		procedure TestCreateCookieSuccess_FormatsUnitedParamsWithToken;
+		[Test]
+		procedure TestCreateOAuthSuccess_CookieBasedIsFalse;
+		[Test]
+		procedure TestCreateFailure_CookieBasedIsFalse;
 	end;
 
 	[TestFixture]
@@ -153,6 +168,77 @@ begin
 	Result := TAuthResult.CreateOAuthSuccess(OAuth);
 
 	Assert.AreEqual('access_token=token123', Result.UnitedParams);
+end;
+
+procedure TAuthResultTest.TestCreateCookieSuccess_SetsSuccessTrue;
+var
+	Result: TAuthResult;
+begin
+	Result := TAuthResult.CreateCookieSuccess('csrf_token_123');
+
+	Assert.IsTrue(Result.Success);
+end;
+
+procedure TAuthResultTest.TestCreateCookieSuccess_SetsCookieBasedTrue;
+var
+	Result: TAuthResult;
+begin
+	Result := TAuthResult.CreateCookieSuccess('csrf_token_123');
+
+	Assert.IsTrue(Result.CookieBased);
+end;
+
+procedure TAuthResultTest.TestCreateCookieSuccess_SetsAuthTokenFromCSRF;
+var
+	Result: TAuthResult;
+begin
+	Result := TAuthResult.CreateCookieSuccess('my_csrf_token');
+
+	Assert.AreEqual('my_csrf_token', Result.AuthToken);
+end;
+
+procedure TAuthResultTest.TestCreateCookieSuccess_SetsOAuthAccessTokenFromCSRF;
+var
+	Result: TAuthResult;
+begin
+	{In cookie mode, OAuthToken.access_token mirrors the CSRF token}
+	Result := TAuthResult.CreateCookieSuccess('csrf_abc');
+
+	Assert.AreEqual('csrf_abc', Result.OAuthToken.access_token);
+end;
+
+procedure TAuthResultTest.TestCreateCookieSuccess_FormatsUnitedParamsWithToken;
+var
+	Result: TAuthResult;
+begin
+	{Cookie mode uses 'token=' prefix instead of 'access_token='}
+	Result := TAuthResult.CreateCookieSuccess('csrf_token_xyz');
+
+	Assert.AreEqual('token=csrf_token_xyz', Result.UnitedParams);
+end;
+
+procedure TAuthResultTest.TestCreateOAuthSuccess_CookieBasedIsFalse;
+var
+	OAuth: TCloudOAuth;
+	Result: TAuthResult;
+begin
+	{OAuth success should not set CookieBased flag}
+	OAuth := Default(TCloudOAuth);
+	OAuth.access_token := 'token';
+
+	Result := TAuthResult.CreateOAuthSuccess(OAuth);
+
+	Assert.IsFalse(Result.CookieBased);
+end;
+
+procedure TAuthResultTest.TestCreateFailure_CookieBasedIsFalse;
+var
+	Result: TAuthResult;
+begin
+	{Failure should not set CookieBased flag}
+	Result := TAuthResult.CreateFailure('error');
+
+	Assert.IsFalse(Result.CookieBased);
 end;
 
 {TAuthCredentialsTest}

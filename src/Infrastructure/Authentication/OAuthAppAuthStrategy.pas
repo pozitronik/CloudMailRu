@@ -19,11 +19,11 @@ type
 		function GetName: WideString;
 	end;
 
-	{Default factory that creates TOAuthAppAuthStrategy.
-		Use this factory for production code to inject auth strategy via DI.}
+	{Default factory that dispatches by auth method.
+		Returns TVKIDAuthStrategy for VK ID mode, TOAuthAppAuthStrategy for everything else.}
 	TDefaultAuthStrategyFactory = class(TInterfacedObject, IAuthStrategyFactory)
 	public
-		function CreateDefaultStrategy: IAuthStrategy;
+		function CreateStrategy(AuthMethod: Integer): IAuthStrategy;
 	end;
 
 implementation
@@ -35,7 +35,8 @@ uses
 	CloudOAuthJsonAdapter,
 	WFXTypes,
 	LanguageStrings,
-	StringHelper;
+	StringHelper,
+	VKIDAuthStrategy;
 
 {TOAuthAppAuthStrategy}
 
@@ -84,9 +85,12 @@ end;
 
 {TDefaultAuthStrategyFactory}
 
-function TDefaultAuthStrategyFactory.CreateDefaultStrategy: IAuthStrategy;
+function TDefaultAuthStrategyFactory.CreateStrategy(AuthMethod: Integer): IAuthStrategy;
 begin
-	Result := TOAuthAppAuthStrategy.Create;
+	if AuthMethod = CLOUD_AUTH_METHOD_VKID then
+		Result := TVKIDAuthStrategy.Create
+	else
+		Result := TOAuthAppAuthStrategy.Create;
 end;
 
 end.

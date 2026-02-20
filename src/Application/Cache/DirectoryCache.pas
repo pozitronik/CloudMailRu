@@ -54,7 +54,7 @@ type
 implementation
 
 uses
-	Classes, IOUtils, DateUtils, System.Hash,
+	Classes, IOUtils, DateUtils, System.Hash, SyncObjs,
 	CloudDirItemListJsonAdapter;
 
 {TDiskDirectoryCache}

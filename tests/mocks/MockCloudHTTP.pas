@@ -128,6 +128,7 @@ type
 		procedure SetProgressNames(SourceName, TargetName: WideString);
 		procedure SetProgress(Progress: IProgress);
 		procedure SetAuthCookie(Value: TIdCookieManager);
+		function GetAuthCookie: TIdCookieManager;
 		procedure SetCSRFToken(const Token: WideString);
 		function GetHTTP: TIdHTTP;
 	end;
@@ -675,6 +676,11 @@ end;
 procedure TMockCloudHTTP.SetAuthCookie(Value: TIdCookieManager);
 begin
 	{No-op for mock}
+end;
+
+function TMockCloudHTTP.GetAuthCookie: TIdCookieManager;
+begin
+	Result := nil;
 end;
 
 procedure TMockCloudHTTP.SetCSRFToken(const Token: WideString);

@@ -236,6 +236,9 @@ type
 		function GetCryptPasswordStorage: Integer;
 		procedure SetCryptPasswordStorageEnabled(Value: Boolean);
 		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
+		procedure SetAuthMethod(Value: Integer);
+		function GetAuthMethod: Integer;
+		procedure SetPasswordControlsVisible(Value: Boolean);
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
@@ -422,6 +425,7 @@ type
 		procedure OnCryptPasswordStorageChanged;
 		procedure OnEncryptPasswordClick;
 		procedure OnCipherProfileChanged;
+		procedure OnAuthMethodChanged;
 		procedure OnFieldChanged;
 		procedure OnTestAccountClick;
 		procedure OnTestShareClick;
@@ -773,9 +777,11 @@ begin
 
 		FView.SetAccountName(AccSettings.Account);
 		FView.SetIsPrivate(not AccSettings.PublicAccount);
+		FView.SetAuthMethod(AccSettings.AuthMethod);
 		FView.SetEmail(AccSettings.Email);
 		FView.SetPassword(AccSettings.Password);
 		FView.SetUseTCPasswordManager(AccSettings.UseTCPasswordManager);
+		FView.SetPasswordControlsVisible(AccSettings.AuthMethod <> CLOUD_AUTH_METHOD_VKID);
 		FView.SetUnlimitedFileSize(AccSettings.UnlimitedFilesize);
 		FView.SetSplitLargeFiles(AccSettings.SplitLargeFiles);
 		FView.SetCloudMaxFileSize(AccSettings.CloudMaxFileSize);
@@ -815,6 +821,8 @@ begin
 		FSelectedAccount := '';
 		FView.SetAccountName('');
 		FView.SetIsPrivate(True);
+		FView.SetAuthMethod(CLOUD_AUTH_METHOD_OAUTH_APP);
+		FView.SetPasswordControlsVisible(True);
 		FView.SetEmail('');
 		FView.SetPassword('');
 		FView.SetUseTCPasswordManager(False);
@@ -1027,8 +1035,8 @@ begin
 	AccSettings.CryptPasswordStorage := FView.GetCryptPasswordStorage;
 	AccSettings.CipherProfileId := IndexToCipherProfileId(FView.GetCipherProfileIndex);
 	AccSettings.Server := ComboIndexToServerName(FView.GetServerComboIndex);
-	AccSettings.AuthMethod := CLOUD_AUTH_METHOD_OAUTH_APP;
-	AccSettings.UseAppPassword := True;
+	AccSettings.AuthMethod := FView.GetAuthMethod;
+	AccSettings.UseAppPassword := AccSettings.AuthMethod = CLOUD_AUTH_METHOD_OAUTH_APP;
 
 	if AccSettings.UseTCPasswordManager then
 	begin
@@ -1176,6 +1184,12 @@ procedure TAccountsPresenter.OnAccountTypeChanged;
 begin
 	FView.SetSharesPanelVisible(not FView.GetIsPrivate);
 	FView.SetAccountsPanelVisible(FView.GetIsPrivate);
+	OnFieldChanged;
+end;
+
+procedure TAccountsPresenter.OnAuthMethodChanged;
+begin
+	FView.SetPasswordControlsVisible(FView.GetAuthMethod <> CLOUD_AUTH_METHOD_VKID);
 	OnFieldChanged;
 end;
 

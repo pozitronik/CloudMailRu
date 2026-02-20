@@ -114,6 +114,9 @@ var
 	ERR_SHARE_FOLDER_MSG: WideString;
 	ERR_SOCKET_GENERAL: WideString;
 	ERR_TOKEN_UPDATE: WideString;
+	ERR_VKID_LOGIN_CANCELLED: WideString;
+	ERR_VKID_CSRF_FAILED: WideString;
+	ERR_WEBVIEW2_NOT_AVAILABLE: WideString;
 	ERR_UNPUBLISH_FILE: WideString;
 	ERR_UNPUBLISH_MSG: WideString;
 	ERR_UNSHARE_FOLDER_MSG: WideString;
@@ -203,6 +206,9 @@ var
 	SESSION_EXPIRED: WideString;
 	SESSION_REAUTHENTICATED: WideString;
 	TOKEN_UPDATED: WideString;
+	REQUESTING_VKID_LOGIN: WideString;
+	VKID_COOKIES_OBTAINED: WideString;
+	VKID_LOGIN_SUCCESS: WideString;
 	TRASH_LISTING: WideString;
 	TRY_ANOTHER_SHARD: WideString;
 	UNDEFINED_DOWNLOAD_SHARD: WideString;
@@ -387,6 +393,12 @@ var
 	DFM_LV_STREAM_M3U8: WideString;
 	DFM_LV_STREAM_LINK: WideString;
 	DFM_LV_STREAM_WEB: WideString;
+	{VKIDLogin form}
+	DFM_VKID_LOGIN_TITLE: WideString;
+	{Auth method options}
+	DFM_LBL_AUTH_METHOD: WideString;
+	DFM_OPT_AUTH_OAUTH: WideString;
+	DFM_OPT_AUTH_VKID: WideString;
 	{AskPassword form}
 	DFM_ASK_FORM_TITLE: WideString;
 	DFM_ASK_LBL_PASSWORD: WideString;
@@ -591,6 +603,9 @@ begin
 	ERR_SHARE_FOLDER_MSG := 'Error while share access to %s from %s folder, see the main log';
 	ERR_SOCKET_GENERAL := '%s network error: %s at %s %s';
 	ERR_TOKEN_UPDATE := 'Token update error!';
+	ERR_VKID_LOGIN_CANCELLED := 'VK ID login cancelled by user';
+	ERR_VKID_CSRF_FAILED := 'Failed to obtain CSRF token after VK ID login';
+	ERR_WEBVIEW2_NOT_AVAILABLE := 'Microsoft Edge WebView2 Runtime is required for VK ID login but was not found. Please install it from https://developer.microsoft.com/en-us/microsoft-edge/webview2/';
 	ERR_UNPUBLISH_FILE := 'File unpublishing error';
 	ERR_UNPUBLISH_MSG := 'Error while unpublishing file %s, see the main log';
 	ERR_UNSHARE_FOLDER_MSG := 'Error while remove access to %s to %s folder, see the main log';
@@ -678,6 +693,9 @@ begin
 	SESSION_EXPIRED := 'OAuth session expired, attempting re-authentication';
 	SESSION_REAUTHENTICATED := 'Successfully re-authenticated after session expiry';
 	TOKEN_UPDATED := 'Token updated';
+	REQUESTING_VKID_LOGIN := 'Requesting VK ID login for %s';
+	VKID_COOKIES_OBTAINED := 'VK ID cookies obtained successfully';
+	VKID_LOGIN_SUCCESS := 'VK ID login completed successfully';
 	TRASH_LISTING := 'Trash bin listing';
 	TRY_ANOTHER_SHARD := 'Try with another shard?';
 	UNDEFINED_DOWNLOAD_SHARD := 'Current download shard is undefined, trying to get one';
@@ -869,6 +887,12 @@ begin
 	DFM_LV_STREAM_M3U8 := 'M3U8';
 	DFM_LV_STREAM_LINK := 'Link';
 	DFM_LV_STREAM_WEB := 'Web';
+	{VKIDLogin form}
+	DFM_VKID_LOGIN_TITLE := 'Mail.ru / VK ID Login';
+	{Auth method options}
+	DFM_LBL_AUTH_METHOD := 'Authentication method:';
+	DFM_OPT_AUTH_OAUTH := 'OAuth App Password';
+	DFM_OPT_AUTH_VKID := 'VK ID Browser Login';
 	{AskPassword form}
 	DFM_ASK_FORM_TITLE := 'Password';
 	DFM_ASK_LBL_PASSWORD := 'Enter account password:';
@@ -1069,6 +1093,9 @@ begin
 	TranslationRegistry.Add('ERR_SHARE_FOLDER_MSG', @ERR_SHARE_FOLDER_MSG);
 	TranslationRegistry.Add('ERR_SOCKET_GENERAL', @ERR_SOCKET_GENERAL);
 	TranslationRegistry.Add('ERR_TOKEN_UPDATE', @ERR_TOKEN_UPDATE);
+	TranslationRegistry.Add('ERR_VKID_LOGIN_CANCELLED', @ERR_VKID_LOGIN_CANCELLED);
+	TranslationRegistry.Add('ERR_VKID_CSRF_FAILED', @ERR_VKID_CSRF_FAILED);
+	TranslationRegistry.Add('ERR_WEBVIEW2_NOT_AVAILABLE', @ERR_WEBVIEW2_NOT_AVAILABLE);
 	TranslationRegistry.Add('ERR_UNPUBLISH_FILE', @ERR_UNPUBLISH_FILE);
 	TranslationRegistry.Add('ERR_UNPUBLISH_MSG', @ERR_UNPUBLISH_MSG);
 	TranslationRegistry.Add('ERR_UNSHARE_FOLDER_MSG', @ERR_UNSHARE_FOLDER_MSG);
@@ -1158,6 +1185,9 @@ begin
 	TranslationRegistry.Add('SESSION_EXPIRED', @SESSION_EXPIRED);
 	TranslationRegistry.Add('SESSION_REAUTHENTICATED', @SESSION_REAUTHENTICATED);
 	TranslationRegistry.Add('TOKEN_UPDATED', @TOKEN_UPDATED);
+	TranslationRegistry.Add('REQUESTING_VKID_LOGIN', @REQUESTING_VKID_LOGIN);
+	TranslationRegistry.Add('VKID_COOKIES_OBTAINED', @VKID_COOKIES_OBTAINED);
+	TranslationRegistry.Add('VKID_LOGIN_SUCCESS', @VKID_LOGIN_SUCCESS);
 	TranslationRegistry.Add('TRASH_LISTING', @TRASH_LISTING);
 	TranslationRegistry.Add('TRY_ANOTHER_SHARD', @TRY_ANOTHER_SHARD);
 	TranslationRegistry.Add('UNDEFINED_DOWNLOAD_SHARD', @UNDEFINED_DOWNLOAD_SHARD);
@@ -1336,6 +1366,10 @@ begin
 	TranslationRegistry.Add('DFM_LV_STREAM_M3U8', @DFM_LV_STREAM_M3U8);
 	TranslationRegistry.Add('DFM_LV_STREAM_LINK', @DFM_LV_STREAM_LINK);
 	TranslationRegistry.Add('DFM_LV_STREAM_WEB', @DFM_LV_STREAM_WEB);
+	TranslationRegistry.Add('DFM_VKID_LOGIN_TITLE', @DFM_VKID_LOGIN_TITLE);
+	TranslationRegistry.Add('DFM_LBL_AUTH_METHOD', @DFM_LBL_AUTH_METHOD);
+	TranslationRegistry.Add('DFM_OPT_AUTH_OAUTH', @DFM_OPT_AUTH_OAUTH);
+	TranslationRegistry.Add('DFM_OPT_AUTH_VKID', @DFM_OPT_AUTH_VKID);
 	TranslationRegistry.Add('DFM_ASK_FORM_TITLE', @DFM_ASK_FORM_TITLE);
 	TranslationRegistry.Add('DFM_ASK_LBL_PASSWORD', @DFM_ASK_LBL_PASSWORD);
 	TranslationRegistry.Add('DFM_ASK_BTN_OK', @DFM_ASK_BTN_OK);

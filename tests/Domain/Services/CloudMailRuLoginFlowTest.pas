@@ -41,6 +41,8 @@ type
 		function GetOAuthToken: TCloudOAuth;
 		function GetUnitedParams: WideString;
 		function GetPublicShard: WideString;
+		function GetCookieBasedAuth: Boolean;
+		function GetOAuthAccessTokenValue: WideString;
 	end;
 
 	[TestFixture]
@@ -102,6 +104,37 @@ type
 		procedure TestGetUserSpace_PublicAccount_Works;
 	end;
 
+	{Tests for cookie-based (VK ID) authentication mode}
+	[TestFixture]
+	TCloudMailRuCookieAuthTest = class
+	private
+		FMockHTTP: TMockCloudHTTP;
+		FMockHTTPManager: TMockHTTPManager;
+		FCloud: TTestableLoginCloud;
+
+		function CreateCookieCloud(AuthStrategy: IAuthStrategy): TTestableLoginCloud;
+	public
+		[Setup]
+		procedure Setup;
+		[TearDown]
+		procedure TearDown;
+
+		[Test]
+		procedure TestLogin_CookieAuth_SetsCookieBasedFlag;
+		[Test]
+		procedure TestLogin_CookieAuth_SetsAuthToken;
+		[Test]
+		procedure TestLogin_CookieAuth_SetsUnitedParamsWithTokenPrefix;
+		[Test]
+		procedure TestLogin_CookieAuth_SetsOAuthAccessTokenFromCSRF;
+		[Test]
+		procedure TestGetOAuthAccessToken_CookieMode_ReturnsAuthToken;
+		[Test]
+		procedure TestGetOAuthAccessToken_OAuthMode_ReturnsOAuthToken;
+		[Test]
+		procedure TestRefreshCSRFToken_CookieMode_UpdatesAllTokens;
+	end;
+
 	{Tests for RefreshToken fallback to ReAuthenticate when CSRF refresh fails}
 	[TestFixture]
 	TCloudMailRuRefreshTokenTest = class
@@ -160,6 +193,149 @@ end;
 function TTestableLoginCloud.GetPublicShard: WideString;
 begin
 	Result := FShardManager.GetPublicShard;
+end;
+
+function TTestableLoginCloud.GetCookieBasedAuth: Boolean;
+begin
+	Result := FCookieBasedAuth;
+end;
+
+function TTestableLoginCloud.GetOAuthAccessTokenValue: WideString;
+begin
+	Result := FOAuthToken.access_token;
+end;
+
+{TCloudMailRuCookieAuthTest}
+
+procedure TCloudMailRuCookieAuthTest.Setup;
+begin
+	FMockHTTP := TMockCloudHTTP.Create;
+	FMockHTTPManager := TMockHTTPManager.Create(FMockHTTP);
+end;
+
+procedure TCloudMailRuCookieAuthTest.TearDown;
+begin
+	FreeAndNil(FCloud);
+	FMockHTTPManager := nil;
+	FMockHTTP := nil;
+end;
+
+function TCloudMailRuCookieAuthTest.CreateCookieCloud(AuthStrategy: IAuthStrategy): TTestableLoginCloud;
+var
+	Settings: TCloudSettings;
+begin
+	Settings := Default(TCloudSettings);
+	Settings.AccountSettings.Email := 'test@mail.ru';
+	Settings.AccountSettings.PublicAccount := False;
+	Settings.AccountSettings.AuthMethod := CLOUD_AUTH_METHOD_VKID;
+
+	Result := TTestableLoginCloud.Create(
+		Settings,
+		FMockHTTPManager,
+		TestThreadID(),
+		AuthStrategy,
+		TNullFileSystem.Create,
+		TNullLogger.Create,
+		TNullProgress.Create,
+		TNullRequest.Create,
+		TNullTCHandler.Create,
+		TNullCipher.Create, TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+end;
+
+procedure TCloudMailRuCookieAuthTest.TestLogin_CookieAuth_SetsCookieBasedFlag;
+begin
+	FCloud := CreateCookieCloud(TMockAuthStrategy.CreateCookieSuccess('csrf_token'));
+	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
+
+	FCloud.Login;
+
+	Assert.IsTrue(FCloud.GetCookieBasedAuth, 'CookieBased flag should be set after cookie-based login');
+end;
+
+procedure TCloudMailRuCookieAuthTest.TestLogin_CookieAuth_SetsAuthToken;
+begin
+	FCloud := CreateCookieCloud(TMockAuthStrategy.CreateCookieSuccess('my_csrf_token'));
+	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
+
+	FCloud.Login;
+
+	Assert.AreEqual(String('my_csrf_token'), String(FCloud.GetAuthToken));
+end;
+
+procedure TCloudMailRuCookieAuthTest.TestLogin_CookieAuth_SetsUnitedParamsWithTokenPrefix;
+begin
+	{Cookie mode uses 'token=' instead of 'access_token='}
+	FCloud := CreateCookieCloud(TMockAuthStrategy.CreateCookieSuccess('csrf_abc'));
+	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
+
+	FCloud.Login;
+
+	Assert.AreEqual(String('token=csrf_abc'), String(FCloud.GetUnitedParams));
+end;
+
+procedure TCloudMailRuCookieAuthTest.TestLogin_CookieAuth_SetsOAuthAccessTokenFromCSRF;
+begin
+	{In cookie mode, OAuthToken.access_token mirrors the CSRF token}
+	FCloud := CreateCookieCloud(TMockAuthStrategy.CreateCookieSuccess('csrf_xyz'));
+	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
+
+	FCloud.Login;
+
+	Assert.AreEqual(String('csrf_xyz'), String(FCloud.GetOAuthAccessTokenValue));
+end;
+
+procedure TCloudMailRuCookieAuthTest.TestGetOAuthAccessToken_CookieMode_ReturnsAuthToken;
+begin
+	{When cookie-based, GetOAuthAccessToken should return the CSRF auth token}
+	FCloud := CreateCookieCloud(TMockAuthStrategy.CreateCookieSuccess('csrf_for_download'));
+	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
+
+	FCloud.Login;
+
+	Assert.AreEqual(String('csrf_for_download'), String(FCloud.GetOAuthAccessToken));
+end;
+
+procedure TCloudMailRuCookieAuthTest.TestGetOAuthAccessToken_OAuthMode_ReturnsOAuthToken;
+var
+	Settings: TCloudSettings;
+begin
+	{When OAuth-based, GetOAuthAccessToken returns FOAuthToken.access_token}
+	Settings := Default(TCloudSettings);
+	Settings.AccountSettings.Email := 'test@mail.ru';
+	Settings.AccountSettings.Password := 'pass';
+	Settings.AccountSettings.PublicAccount := False;
+
+	FCloud := TTestableLoginCloud.Create(
+		Settings, FMockHTTPManager, TestThreadID(),
+		TMockAuthStrategy.CreateOAuthSuccess('oauth_token_123', 'refresh', 3600),
+		TNullFileSystem.Create, TNullLogger.Create, TNullProgress.Create,
+		TNullRequest.Create, TNullTCHandler.Create, TNullCipher.Create,
+		TNullOpenSSLProvider.Create, TNullAccountCredentialsProvider.Create);
+
+	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
+	FCloud.Login;
+
+	Assert.AreEqual(String('oauth_token_123'), String(FCloud.GetOAuthAccessToken));
+end;
+
+procedure TCloudMailRuCookieAuthTest.TestRefreshCSRFToken_CookieMode_UpdatesAllTokens;
+begin
+	{In cookie mode, RefreshCSRFToken should update AuthToken, OAuthToken.access_token, and UnitedParams}
+	FCloud := CreateCookieCloud(TMockAuthStrategy.CreateCookieSuccess('old_csrf'));
+	FMockHTTP.SetResponse(API_USER_SPACE, True, JSON_USER_SPACE);
+	FCloud.Login;
+
+	{Setup CSRF refresh to return a new token}
+	FMockHTTP.SetResponse(API_CSRF, True, '{"status":200,"body":{"token":"new_csrf_token"}}');
+
+	FCloud.RefreshToken;
+
+	Assert.AreEqual(String('new_csrf_token'), String(FCloud.GetAuthToken),
+		'AuthToken should be updated to new CSRF token');
+	Assert.AreEqual(String('new_csrf_token'), String(FCloud.GetOAuthAccessTokenValue),
+		'OAuthToken.access_token should be synced with CSRF token');
+	Assert.AreEqual(String('token=new_csrf_token'), String(FCloud.GetUnitedParams),
+		'UnitedParams should be updated with new CSRF token');
 end;
 
 {TCloudMailRuLoginFlowTest}
@@ -596,6 +772,7 @@ end;
 
 initialization
 	TDUnitX.RegisterTestFixture(TCloudMailRuLoginFlowTest);
+	TDUnitX.RegisterTestFixture(TCloudMailRuCookieAuthTest);
 	TDUnitX.RegisterTestFixture(TCloudMailRuRefreshTokenTest);
 
 end.

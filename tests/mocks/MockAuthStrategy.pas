@@ -17,6 +17,7 @@ type
 	TMockAuthStrategy = class(TInterfacedObject, IAuthStrategy)
 	private
 		FShouldSucceed: Boolean;
+		FCookieBased: Boolean;
 		FAccessToken: WideString;
 		FRefreshToken: WideString;
 		FExpiresIn: Integer;
@@ -35,6 +36,9 @@ type
 
 		{Create a mock that succeeds with full OAuth configuration}
 		constructor CreateOAuthSuccess(const AccessToken, RefreshToken: WideString; ExpiresIn: Integer);
+
+		{Create a mock that succeeds with cookie-based auth (VK ID)}
+		constructor CreateCookieSuccess(const CSRFToken: WideString);
 
 		{IAuthStrategy implementation}
 		function Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP;
@@ -67,6 +71,7 @@ type
 		procedure AddSuccess(const AccessToken: WideString);
 		procedure AddFailure(const ErrorMessage: WideString);
 		procedure AddOAuthSuccess(const AccessToken, RefreshToken: WideString; ExpiresIn: Integer);
+		procedure AddCookieSuccess(const CSRFToken: WideString);
 
 		{IAuthStrategy implementation}
 		function Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP;
@@ -113,6 +118,16 @@ begin
 	FCallCount := 0;
 end;
 
+constructor TMockAuthStrategy.CreateCookieSuccess(const CSRFToken: WideString);
+begin
+	inherited Create;
+	FShouldSucceed := True;
+	FCookieBased := True;
+	FAccessToken := CSRFToken;
+	FAuthenticateCalled := False;
+	FCallCount := 0;
+end;
+
 function TMockAuthStrategy.Authenticate(const Credentials: TAuthCredentials;
 	HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 var
@@ -125,16 +140,23 @@ begin
 	if not FShouldSucceed then
 		Exit(TAuthResult.CreateFailure(FErrorMessage));
 
-	{Return OAuth result}
-	OAuth := Default(TCloudOAuth);
-	OAuth.access_token := FAccessToken;
-	OAuth.refresh_token := FRefreshToken;
-	if FExpiresIn > 0 then
-		OAuth.expires_in := FExpiresIn
+	if FCookieBased then
+	begin
+		Result := TAuthResult.CreateCookieSuccess(FAccessToken);
+	end
 	else
-		OAuth.expires_in := 3600;
+	begin
+		{Return OAuth result}
+		OAuth := Default(TCloudOAuth);
+		OAuth.access_token := FAccessToken;
+		OAuth.refresh_token := FRefreshToken;
+		if FExpiresIn > 0 then
+			OAuth.expires_in := FExpiresIn
+		else
+			OAuth.expires_in := 3600;
 
-	Result := TAuthResult.CreateOAuthSuccess(OAuth);
+		Result := TAuthResult.CreateOAuthSuccess(OAuth);
+	end;
 
 	{Override UnitedParams if custom value was set}
 	if FUnitedParams <> '' then
@@ -209,6 +231,12 @@ begin
 	OAuth.refresh_token := RefreshToken;
 	OAuth.expires_in := ExpiresIn;
 	FResults[High(FResults)] := TAuthResult.CreateOAuthSuccess(OAuth);
+end;
+
+procedure TMockAuthStrategySequence.AddCookieSuccess(const CSRFToken: WideString);
+begin
+	SetLength(FResults, Length(FResults) + 1);
+	FResults[High(FResults)] := TAuthResult.CreateCookieSuccess(CSRFToken);
 end;
 
 function TMockAuthStrategySequence.Authenticate(const Credentials: TAuthCredentials;

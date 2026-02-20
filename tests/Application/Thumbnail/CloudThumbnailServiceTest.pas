@@ -46,6 +46,7 @@ type
 		procedure SetProgressNames(SourceName, TargetName: WideString);
 		procedure SetProgress(Progress: IProgress);
 		procedure SetAuthCookie(Value: TIdCookieManager);
+		function GetAuthCookie: TIdCookieManager;
 		procedure SetCSRFToken(const Token: WideString);
 		function GetHTTP: TIdHTTP;
 	end;
@@ -163,6 +164,8 @@ procedure TMockThumbnailHTTP.SetProgress(Progress: IProgress);
 begin end;
 procedure TMockThumbnailHTTP.SetAuthCookie(Value: TIdCookieManager);
 begin end;
+function TMockThumbnailHTTP.GetAuthCookie: TIdCookieManager;
+begin Result := nil; end;
 procedure TMockThumbnailHTTP.SetCSRFToken(const Token: WideString);
 begin end;
 function TMockThumbnailHTTP.GetHTTP: TIdHTTP;
