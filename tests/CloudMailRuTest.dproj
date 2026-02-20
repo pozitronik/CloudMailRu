@@ -262,6 +262,8 @@
         <DCCReference Include="..\src\Infrastructure\Authentication\OAuthAppAuthStrategy.pas"/>
         <DCCReference Include="Infrastructure\Authentication\OAuthAppAuthStrategyTest.pas"/>
         <DCCReference Include="..\src\Infrastructure\Authentication\VKIDAuthStrategy.pas"/>
+        <DCCReference Include="..\src\Infrastructure\Authentication\CookiePersistence.pas"/>
+        <DCCReference Include="Infrastructure\Authentication\CookiePersistenceTest.pas"/>
         <DCCReference Include="..\src\Presentation\UI\Forms\VKIDLogin.pas">
             <Form>VKIDLoginForm</Form>
         </DCCReference>

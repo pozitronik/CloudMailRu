@@ -27,6 +27,7 @@ type
 		CryptFilesPassword: WideString;
 
 		Endpoints: TCloudEndpoints; {Resolved endpoints for this cloud instance}
+		CookieFilePath: WideString; {Pre-computed cookie file path for VK ID session persistence, empty if disabled}
 
 		{Factory method to create CloudSettings from plugin and account settings}
 		class function CreateFromSettings(const PluginSettings: TPluginSettings; const AccSettings: TAccountSettings): TCloudSettings; overload; static;

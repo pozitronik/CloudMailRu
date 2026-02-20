@@ -399,6 +399,7 @@ var
 	DFM_LBL_AUTH_METHOD: WideString;
 	DFM_OPT_AUTH_OAUTH: WideString;
 	DFM_OPT_AUTH_VKID: WideString;
+	DFM_CB_PERSIST_COOKIES: WideString;
 	{AskPassword form}
 	DFM_ASK_FORM_TITLE: WideString;
 	DFM_ASK_LBL_PASSWORD: WideString;
@@ -893,6 +894,7 @@ begin
 	DFM_LBL_AUTH_METHOD := 'Authentication method:';
 	DFM_OPT_AUTH_OAUTH := 'OAuth App Password';
 	DFM_OPT_AUTH_VKID := 'VK ID Browser Login';
+	DFM_CB_PERSIST_COOKIES := 'Save session cookies for reuse';
 	{AskPassword form}
 	DFM_ASK_FORM_TITLE := 'Password';
 	DFM_ASK_LBL_PASSWORD := 'Enter account password:';
@@ -1370,6 +1372,7 @@ begin
 	TranslationRegistry.Add('DFM_LBL_AUTH_METHOD', @DFM_LBL_AUTH_METHOD);
 	TranslationRegistry.Add('DFM_OPT_AUTH_OAUTH', @DFM_OPT_AUTH_OAUTH);
 	TranslationRegistry.Add('DFM_OPT_AUTH_VKID', @DFM_OPT_AUTH_VKID);
+	TranslationRegistry.Add('DFM_CB_PERSIST_COOKIES', @DFM_CB_PERSIST_COOKIES);
 	TranslationRegistry.Add('DFM_ASK_FORM_TITLE', @DFM_ASK_FORM_TITLE);
 	TranslationRegistry.Add('DFM_ASK_LBL_PASSWORD', @DFM_ASK_LBL_PASSWORD);
 	TranslationRegistry.Add('DFM_ASK_BTN_OK', @DFM_ASK_BTN_OK);

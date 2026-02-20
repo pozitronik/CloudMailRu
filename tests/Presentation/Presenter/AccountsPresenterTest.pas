@@ -128,6 +128,8 @@ type
 		FEmail: WideString;
 		FPassword: WideString;
 		FAuthMethod: Integer;
+		FPersistCookies: Boolean;
+		FPersistCookiesVisible: Boolean;
 		FPasswordControlsVisible: Boolean;
 		FUseTCPasswordManager: Boolean;
 		FUnlimitedFileSize: Boolean;
@@ -364,6 +366,9 @@ type
 		function GetPassword: WideString;
 		procedure SetAuthMethod(Value: Integer);
 		function GetAuthMethod: Integer;
+		procedure SetPersistCookies(Value: Boolean);
+		function GetPersistCookies: Boolean;
+		procedure SetPersistCookiesVisible(Value: Boolean);
 		procedure SetPasswordControlsVisible(Value: Boolean);
 		procedure SetUseTCPasswordManager(Value: Boolean);
 		function GetUseTCPasswordManager: Boolean;
@@ -1587,6 +1592,21 @@ end;
 function TMockAccountsView.GetAuthMethod: Integer;
 begin
 	Result := FAuthMethod;
+end;
+
+procedure TMockAccountsView.SetPersistCookies(Value: Boolean);
+begin
+	FPersistCookies := Value;
+end;
+
+function TMockAccountsView.GetPersistCookies: Boolean;
+begin
+	Result := FPersistCookies;
+end;
+
+procedure TMockAccountsView.SetPersistCookiesVisible(Value: Boolean);
+begin
+	FPersistCookiesVisible := Value;
 end;
 
 procedure TMockAccountsView.SetPasswordControlsVisible(Value: Boolean);

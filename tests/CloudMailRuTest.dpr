@@ -164,6 +164,8 @@ uses
 	OAuthAppAuthStrategy in '..\src\Infrastructure\Authentication\OAuthAppAuthStrategy.pas',
 	OAuthAppAuthStrategyTest in 'Infrastructure\Authentication\OAuthAppAuthStrategyTest.pas',
 	VKIDAuthStrategy in '..\src\Infrastructure\Authentication\VKIDAuthStrategy.pas',
+	CookiePersistence in '..\src\Infrastructure\Authentication\CookiePersistence.pas',
+	CookiePersistenceTest in 'Infrastructure\Authentication\CookiePersistenceTest.pas',
 	VKIDLogin in '..\src\Presentation\UI\Forms\VKIDLogin.pas' {VKIDLoginForm} ,
 	MockCloudHTTP in 'mocks\MockCloudHTTP.pas',
 	MockCloudContext in 'mocks\MockCloudContext.pas',

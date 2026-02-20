@@ -175,6 +175,18 @@ object AccountsForm: TAccountsForm
           OnClick = FieldChanged
           ExplicitWidth = 333
         end
+        object PersistCookiesCB: TCheckBox
+          Left = 0
+          Top = 121
+          Width = 339
+          Height = 17
+          Anchors = [akLeft, akTop, akRight]
+          Caption = 'Save session cookies for reuse'
+          TabOrder = 7
+          Visible = False
+          OnClick = FieldChanged
+          ExplicitWidth = 333
+        end
         object FileSizeGB: TGroupBox
           Left = 0
           Top = 151

@@ -28,6 +28,7 @@ uses
 	CipherProfile,
 	Cipher,
 	AuthStrategy,
+	CookiePersistence,
 	OpenSSLProvider,
 	AccountCredentialsProvider,
 	ServerProfileManager,
@@ -181,6 +182,13 @@ begin
 
 	{Create CloudSettings using factory method - combines plugin settings, account settings and endpoints}
 	CloudSettings := TCloudSettings.CreateFromSettings(FPluginSettingsManager.GetSettings, AccountSettingsData, Endpoints);
+
+	{Compute cookie file path for VK ID session persistence}
+	if AccountSettingsData.PersistCookies and (AccountSettingsData.AuthMethod = CLOUD_AUTH_METHOD_VKID) then
+		CloudSettings.CookieFilePath := TCookiePersistence.BuildFilePath(
+			ExtractFilePath(FPluginSettingsManager.GetAccountsIniFilePath), AccountSettingsData.Account)
+	else
+		CloudSettings.CookieFilePath := '';
 
 	{For non-public accounts, resolve proxy password. Account password is retrieved by TCloudMailRu.Authorize()}
 	if not CloudSettings.AccountSettings.PublicAccount then

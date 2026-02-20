@@ -107,6 +107,7 @@ uses
 	AuthStrategy in 'src\Infrastructure\Authentication\AuthStrategy.pas',
 	OAuthAppAuthStrategy in 'src\Infrastructure\Authentication\OAuthAppAuthStrategy.pas',
 	VKIDAuthStrategy in 'src\Infrastructure\Authentication\VKIDAuthStrategy.pas',
+	CookiePersistence in 'src\Infrastructure\Authentication\CookiePersistence.pas',
 	VKIDLogin in 'src\Presentation\UI\Forms\VKIDLogin.pas' {VKIDLoginForm} ,
 	ThreadStateManager in 'src\Infrastructure\State\ThreadStateManager.pas',
 	ContentFieldProvider in 'src\Presentation\ContentField\ContentFieldProvider.pas',

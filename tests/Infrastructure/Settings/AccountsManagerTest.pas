@@ -89,6 +89,10 @@ type
 		{Verifies GetAccountsList includes SharedPostfix virtual directories}
 		procedure TestGetAccountsList_IncludesSharedPostfix;
 		[Test]
+		{Verifies PersistCookies is properly saved and loaded}
+		procedure TestPersistCookiesPersistence;
+
+		[Test]
 		{Verifies RenameAccount preserves shard and upload URL overrides}
 		procedure TestRenameAccount_PreservesOverrides;
 
@@ -631,6 +635,37 @@ begin
 		AccountsList := TestAccountsManager.GetAccountsList([ATPrivate, ATPublic], [VTShared]);
 		Assert.IsTrue(AccountsList.Contains('TEST_ACCOUNT_ONE' + SharedPostfix),
 			'Shared virtual directory should be included');
+	finally
+		TestAccountsManager.Free;
+	end;
+end;
+
+procedure TAccountsManagerTest.TestPersistCookiesPersistence;
+var
+	TestAccountsManager: TAccountsManager;
+	TestAccountSettings: TAccountSettings;
+	LoadedSettings: TAccountSettings;
+begin
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
+	try
+		TestAccountSettings := Default(TAccountSettings);
+		TestAccountSettings.Account := 'VKID_PERSIST_TEST';
+		TestAccountSettings.Email := 'vkid@mail.ru';
+		TestAccountSettings.AuthMethod := CLOUD_AUTH_METHOD_VKID;
+		TestAccountSettings.PersistCookies := True;
+
+		TestAccountsManager.SetAccountSettings(TestAccountSettings);
+	finally
+		TestAccountsManager.Free;
+	end;
+
+	TestAccountsManager := TAccountsManager.Create(TIniConfigFile.Create(self.AppDir + FP_ACCOUNTS_INI), TNullLogger.Create);
+	try
+		LoadedSettings := TestAccountsManager.GetAccountSettings('VKID_PERSIST_TEST');
+
+		Assert.AreEqual('vkid@mail.ru', LoadedSettings.Email);
+		Assert.AreEqual(CLOUD_AUTH_METHOD_VKID, LoadedSettings.AuthMethod);
+		Assert.IsTrue(LoadedSettings.PersistCookies, 'PersistCookies should be saved and restored');
 	finally
 		TestAccountsManager.Free;
 	end;

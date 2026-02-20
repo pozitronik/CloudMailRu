@@ -31,8 +31,11 @@ type
 		User: WideString; {Username part of email (before @)}
 		Domain: WideString; {Domain part of email (after @)}
 		OAuthUrl: WideString; {OAuth token endpoint URL, empty = use default}
+		CookieFilePath: WideString; {Path for cookie persistence, empty = no persistence}
+		CsrfUrl: WideString; {CSRF endpoint URL for session validation}
 		class function Create(const AEmail, APassword, AUser, ADomain: WideString): TAuthCredentials; overload; static;
 		class function Create(const AEmail, APassword, AUser, ADomain, AOAuthUrl: WideString): TAuthCredentials; overload; static;
+		class function Create(const AEmail, APassword, AUser, ADomain, AOAuthUrl, ACookieFilePath, ACsrfUrl: WideString): TAuthCredentials; overload; static;
 	end;
 
 	{Strategy interface for cloud authentication.
@@ -109,10 +112,15 @@ end;
 
 class function TAuthCredentials.Create(const AEmail, APassword, AUser, ADomain: WideString): TAuthCredentials;
 begin
-	Result := TAuthCredentials.Create(AEmail, APassword, AUser, ADomain, '');
+	Result := TAuthCredentials.Create(AEmail, APassword, AUser, ADomain, '', '', '');
 end;
 
 class function TAuthCredentials.Create(const AEmail, APassword, AUser, ADomain, AOAuthUrl: WideString): TAuthCredentials;
+begin
+	Result := TAuthCredentials.Create(AEmail, APassword, AUser, ADomain, AOAuthUrl, '', '');
+end;
+
+class function TAuthCredentials.Create(const AEmail, APassword, AUser, ADomain, AOAuthUrl, ACookieFilePath, ACsrfUrl: WideString): TAuthCredentials;
 begin
 	Result := Default (TAuthCredentials);
 	Result.Email := AEmail;
@@ -120,6 +128,8 @@ begin
 	Result.User := AUser;
 	Result.Domain := ADomain;
 	Result.OAuthUrl := AOAuthUrl;
+	Result.CookieFilePath := ACookieFilePath;
+	Result.CsrfUrl := ACsrfUrl;
 end;
 
 {TNullAuthStrategy}

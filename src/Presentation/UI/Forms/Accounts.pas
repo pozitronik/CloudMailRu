@@ -182,6 +182,7 @@ type
 		ServerPublicUrlEdit: TEdit;
 		DownloadUrlEdit: TEdit;
 		UploadUrlEdit: TEdit;
+		PersistCookiesCB: TCheckBox;
 		TestAccountButton: TButton;
 		TestShareButton: TButton;
 		SSLParametersGroupbox: TGroupBox;
@@ -466,6 +467,9 @@ type
 		procedure SetEncryptPasswordButtonEnabled(Value: Boolean);
 		procedure SetAuthMethod(Value: Integer);
 		function GetAuthMethod: Integer;
+		procedure SetPersistCookies(Value: Boolean);
+		function GetPersistCookies: Boolean;
+		procedure SetPersistCookiesVisible(Value: Boolean);
 		procedure SetPasswordControlsVisible(Value: Boolean);
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
@@ -1470,6 +1474,21 @@ begin
 		Result := CLOUD_AUTH_METHOD_OAUTH_APP;
 end;
 
+procedure TAccountsForm.SetPersistCookies(Value: Boolean);
+begin
+	PersistCookiesCB.Checked := Value;
+end;
+
+function TAccountsForm.GetPersistCookies: Boolean;
+begin
+	Result := PersistCookiesCB.Checked;
+end;
+
+procedure TAccountsForm.SetPersistCookiesVisible(Value: Boolean);
+begin
+	PersistCookiesCB.Visible := Value;
+end;
+
 procedure TAccountsForm.SetPasswordControlsVisible(Value: Boolean);
 begin
 	PasswordLabel.Visible := Value;
@@ -2150,6 +2169,7 @@ begin
 	PublicRB.Caption := DFM_RB_PUBLIC;
 	AuthMethodLabel.Caption := DFM_LBL_AUTH_METHOD;
 	RepopulateCombo(AuthMethodCombo, [DFM_OPT_AUTH_OAUTH, DFM_OPT_AUTH_VKID]);
+	PersistCookiesCB.Caption := DFM_CB_PERSIST_COOKIES;
 	UseTCPwdMngrCB.Caption := DFM_CB_TC_PASSWORD;
 	FileSizeGB.Caption := DFM_GB_FILE_SIZE;
 	UnlimitedFileSizeCB.Caption := DFM_CB_UNLIMITED_SIZE;

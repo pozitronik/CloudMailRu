@@ -351,6 +351,7 @@ DFM_VKID_LOGIN_TITLE="Вход Mail.ru / VK ID"
 DFM_LBL_AUTH_METHOD="Метод аутентификации:"
 DFM_OPT_AUTH_OAUTH="Пароль приложения OAuth"
 DFM_OPT_AUTH_VKID="Вход через VK ID (браузер)"
+DFM_CB_PERSIST_COOKIES="Сохранять cookies сессии для повторного использования"
 # Short labels for listview Type columns
 DFM_LV_ENCRYPT_YES="Да"
 DFM_LV_ENCRYPT_NO="Нет"

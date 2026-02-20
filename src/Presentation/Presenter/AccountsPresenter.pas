@@ -239,6 +239,9 @@ type
 		procedure SetAuthMethod(Value: Integer);
 		function GetAuthMethod: Integer;
 		procedure SetPasswordControlsVisible(Value: Boolean);
+		procedure SetPersistCookies(Value: Boolean);
+		function GetPersistCookies: Boolean;
+		procedure SetPersistCookiesVisible(Value: Boolean);
 		procedure SetAccountsPanelVisible(Value: Boolean);
 		procedure SetSharesPanelVisible(Value: Boolean);
 		procedure SetApplyButtonEnabled(Value: Boolean);
@@ -493,6 +496,7 @@ uses
 	IndySSLHandlerFactory,
 	CloudMailRu,
 	CloudMailRuFactory,
+	CookiePersistence,
 	Logger,
 	Progress;
 
@@ -782,6 +786,8 @@ begin
 		FView.SetPassword(AccSettings.Password);
 		FView.SetUseTCPasswordManager(AccSettings.UseTCPasswordManager);
 		FView.SetPasswordControlsVisible(AccSettings.AuthMethod <> CLOUD_AUTH_METHOD_VKID);
+		FView.SetPersistCookies(AccSettings.PersistCookies);
+		FView.SetPersistCookiesVisible(AccSettings.AuthMethod = CLOUD_AUTH_METHOD_VKID);
 		FView.SetUnlimitedFileSize(AccSettings.UnlimitedFilesize);
 		FView.SetSplitLargeFiles(AccSettings.SplitLargeFiles);
 		FView.SetCloudMaxFileSize(AccSettings.CloudMaxFileSize);
@@ -823,6 +829,8 @@ begin
 		FView.SetIsPrivate(True);
 		FView.SetAuthMethod(CLOUD_AUTH_METHOD_OAUTH_APP);
 		FView.SetPasswordControlsVisible(True);
+		FView.SetPersistCookies(False);
+		FView.SetPersistCookiesVisible(False);
 		FView.SetEmail('');
 		FView.SetPassword('');
 		FView.SetUseTCPasswordManager(False);
@@ -1037,6 +1045,7 @@ begin
 	AccSettings.Server := ComboIndexToServerName(FView.GetServerComboIndex);
 	AccSettings.AuthMethod := FView.GetAuthMethod;
 	AccSettings.UseAppPassword := AccSettings.AuthMethod = CLOUD_AUTH_METHOD_OAUTH_APP;
+	AccSettings.PersistCookies := FView.GetPersistCookies;
 
 	if AccSettings.UseTCPasswordManager then
 	begin
@@ -1146,12 +1155,25 @@ end;
 procedure TAccountsPresenter.OnDeleteAccountClick;
 var
 	AccountName: WideString;
+	CookieFilePath: WideString;
+	Persistence: TCookiePersistence;
 begin
 	AccountName := FView.GetSelectedAccountName;
 	if AccountName = '' then
 		Exit;
 
 	FAccountsManager.DeleteAccount(AccountName);
+
+	// Clean up cookie file if it exists
+	CookieFilePath := TCookiePersistence.BuildFilePath(
+		ExtractFilePath(FSettingsManager.GetAccountsIniFilePath), AccountName);
+	Persistence := TCookiePersistence.Create(CookieFilePath, TWindowsFileSystem.Create);
+	try
+		Persistence.Delete;
+	finally
+		Persistence.Free;
+	end;
+
 	SetDirty(False);
 
 	RefreshAccountsList;
@@ -1190,6 +1212,7 @@ end;
 procedure TAccountsPresenter.OnAuthMethodChanged;
 begin
 	FView.SetPasswordControlsVisible(FView.GetAuthMethod <> CLOUD_AUTH_METHOD_VKID);
+	FView.SetPersistCookiesVisible(FView.GetAuthMethod = CLOUD_AUTH_METHOD_VKID);
 	OnFieldChanged;
 end;
 

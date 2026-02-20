@@ -438,7 +438,7 @@ var
 	AuthResult: TAuthResult;
 begin
 	Result := False;
-	Credentials := TAuthCredentials.Create(Email, Password, FSettings.AccountSettings.User, FSettings.AccountSettings.Domain, FSettings.Endpoints.OAuthUrl);
+	Credentials := TAuthCredentials.Create(Email, Password, FSettings.AccountSettings.User, FSettings.AccountSettings.Domain, FSettings.Endpoints.OAuthUrl, FSettings.CookieFilePath, FSettings.Endpoints.ApiCsrf);
 	AuthResult := FAuthStrategy.Authenticate(Credentials, HTTP, FLogger);
 
 	if AuthResult.Success then

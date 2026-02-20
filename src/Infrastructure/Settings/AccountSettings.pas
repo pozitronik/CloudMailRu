@@ -30,6 +30,7 @@ type
 		CryptedGUIDFiles: WideString; //The hash of files encryption password to check its validity
 		AuthMethod: Integer; //Authentication method: 0=classic web, 4=OAuth app password
 		UseAppPassword: Boolean; //True if password is an app password (for OAuth)
+		PersistCookies: Boolean; //Save VK ID session cookies for reuse across restarts
 	private
 		FUser: WideString;
 		FDomain: WideString;

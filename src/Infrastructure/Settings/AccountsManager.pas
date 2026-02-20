@@ -232,6 +232,7 @@ begin
 	Result.CryptedGUIDFiles := FConfigFile.ReadString(Account, 'CryptedGUID_files', EmptyWideStr);
 	Result.AuthMethod := FConfigFile.ReadInteger(Account, 'auth_method', 0);
 	Result.UseAppPassword := FConfigFile.ReadBool(Account, 'use_app_password', False);
+	Result.PersistCookies := FConfigFile.ReadBool(Account, 'persist_cookies', False);
 end;
 
 procedure TAccountsManager.SetAccountSettings(Account: WideString; AccountSettings: TAccountSettings);
@@ -252,6 +253,7 @@ begin
 	FConfigFile.WriteStringIfNotDefault(Account, 'server', AccountSettings.Server, EmptyWideStr);
 	FConfigFile.WriteIntegerIfNotDefault(Account, 'auth_method', AccountSettings.AuthMethod, 0);
 	FConfigFile.WriteBoolIfNotDefault(Account, 'use_app_password', AccountSettings.UseAppPassword, False);
+	FConfigFile.WriteBoolIfNotDefault(Account, 'persist_cookies', AccountSettings.PersistCookies, False);
 	{Remove old key after migration}
 	if FConfigFile.ValueExists(Account, 'encrypt_files_mode') then
 		FConfigFile.DeleteKey(Account, 'encrypt_files_mode');
