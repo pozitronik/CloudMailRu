@@ -23,12 +23,14 @@ type
 		FGetPageResult: Boolean;
 		FGetPageResponse: WideString;
 		FOAuthAccessToken: WideString;
+		FIsCookieBasedAuth: Boolean;
 	public
 		constructor Create;
 		procedure SetPostFormResult(Value: Boolean; const Response: WideString);
 		procedure SetResultToBooleanResult(Value: Boolean);
 		procedure SetGetPageResult(Value: Boolean; const Response: WideString);
 		procedure SetOAuthAccessToken(const Value: WideString);
+		procedure SetIsCookieBasedAuth(Value: Boolean);
 		function WasPostFormCalled: Boolean;
 
 		{IShardContext implementation}
@@ -36,6 +38,7 @@ type
 		function CloudResultToBoolean(const JSON, ErrorPrefix: WideString): Boolean;
 		function GetPage(const URL: WideString; var Response: WideString; var ShowProgress: Boolean): Boolean;
 		function GetOAuthAccessToken: WideString;
+		function IsCookieBasedAuth: Boolean;
 	end;
 
 	{Tests for TCloudShardManager.
@@ -220,6 +223,7 @@ begin
 	FGetPageResult := True;
 	FGetPageResponse := '';
 	FOAuthAccessToken := 'test-token';
+	FIsCookieBasedAuth := False;
 end;
 
 procedure TMockShardContext.SetPostFormResult(Value: Boolean; const Response: WideString);
@@ -274,6 +278,16 @@ end;
 function TMockShardContext.GetOAuthAccessToken: WideString;
 begin
 	Result := FOAuthAccessToken;
+end;
+
+procedure TMockShardContext.SetIsCookieBasedAuth(Value: Boolean);
+begin
+	FIsCookieBasedAuth := Value;
+end;
+
+function TMockShardContext.IsCookieBasedAuth: Boolean;
+begin
+	Result := FIsCookieBasedAuth;
 end;
 
 { TCloudShardManagerTest }

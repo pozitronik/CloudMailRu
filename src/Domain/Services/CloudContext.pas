@@ -28,6 +28,8 @@ type
 		function GetPage(const URL: WideString; var Response: WideString; var ShowProgress: Boolean): Boolean;
 		{Get the current OAuth access token string for dispatcher authentication}
 		function GetOAuthAccessToken: WideString;
+		{True when using VK ID cookie-based auth (affects shard resolution strategy)}
+		function IsCookieBasedAuth: Boolean;
 	end;
 
 	{Context for retry operations with token refresh.

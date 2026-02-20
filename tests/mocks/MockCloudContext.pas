@@ -22,6 +22,7 @@ type
 	TMockCloudContext = class(TInterfacedObject, ICloudContext, IShardContext, IRetryContext)
 	private
 		FIsPublicAccount: Boolean;
+		FIsCookieBasedAuth: Boolean;
 		FUnitedParams: WideString;
 		FPublicLink: WideString;
 		FHTTP: ICloudHTTP;
@@ -47,6 +48,7 @@ type
 
 		{Configuration setters for test setup}
 		procedure SetIsPublicAccount(Value: Boolean);
+		procedure SetIsCookieBasedAuth(Value: Boolean);
 		procedure SetUnitedParams(const Value: WideString);
 		procedure SetPublicLink(const Value: WideString);
 		procedure SetHTTP(Value: ICloudHTTP);
@@ -86,6 +88,7 @@ type
 		{IShardContext implementation - reuses ICloudContext methods where applicable}
 		function PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
 		function GetOAuthAccessToken: WideString;
+		function IsCookieBasedAuth: Boolean;
 
 		{IRetryContext implementation}
 		function RefreshToken: Boolean;
@@ -102,6 +105,7 @@ constructor TMockCloudContext.Create;
 begin
 	inherited Create;
 	FIsPublicAccount := False;
+	FIsCookieBasedAuth := False;
 	FUnitedParams := 'token=test&x-email=test@mail.ru';
 	FPublicLink := '';
 	FHTTP := TMockCloudHTTP.Create;
@@ -132,6 +136,11 @@ end;
 procedure TMockCloudContext.SetIsPublicAccount(Value: Boolean);
 begin
 	FIsPublicAccount := Value;
+end;
+
+procedure TMockCloudContext.SetIsCookieBasedAuth(Value: Boolean);
+begin
+	FIsCookieBasedAuth := Value;
 end;
 
 procedure TMockCloudContext.SetUnitedParams(const Value: WideString);
@@ -316,6 +325,11 @@ end;
 function TMockCloudContext.GetOAuthAccessToken: WideString;
 begin
 	Result := FOAuthToken.access_token;
+end;
+
+function TMockCloudContext.IsCookieBasedAuth: Boolean;
+begin
+	Result := FIsCookieBasedAuth;
 end;
 
 {IRetryContext implementation}

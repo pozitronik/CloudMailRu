@@ -232,10 +232,20 @@ begin
 		Exit;
 
 	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, UndefinedMsg);
+	FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, 'EnsureShard: cookie=%s override=[%s] suffix=%s', [BoolToStr(FContext.IsCookieBasedAuth, True), Override, DispatcherSuffix]);
 	if Override <> EmptyWideStr then
 	begin
 		FLogger.Log(LOG_LEVEL_ERROR, MSGTYPE_DETAILS, OverrideMsg);
 		Result := Override;
+	end else if FContext.IsCookieBasedAuth then
+	begin
+		{Cookie mode: OAuth dispatcher rejects CSRF tokens, use API v2 dispatcher
+			which authenticates via cookies and returns get/upload shards}
+		if DispatcherSuffix = 'd' then
+			ResolveShard(Result, SHARD_TYPE_GET)
+		else
+			ResolveShard(Result, SHARD_TYPE_UPLOAD);
+		FLogger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, 'EnsureShard: API v2 result=[%s]', [Result]);
 	end else
 		Result := ResolveOAuthDispatcherShard(DispatcherSuffix);
 

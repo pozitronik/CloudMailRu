@@ -156,6 +156,7 @@ type
 		{IShardContext implementation - PostForm, CloudResultToBoolean, GetUnitedParams, GetPage already declared above}
 		function PostForm(const URL, Data: WideString; var Answer: WideString): Boolean;
 		function GetOAuthAccessToken: WideString;
+		function IsCookieBasedAuth: Boolean;
 
 		{IRetryContext implementation - PostForm already declared above}
 		function RefreshToken: Boolean;
@@ -257,6 +258,11 @@ begin
 		Result := FAuthToken
 	else
 		Result := FOAuthToken.access_token;
+end;
+
+function TCloudMailRu.IsCookieBasedAuth: Boolean;
+begin
+	Result := FCookieBasedAuth;
 end;
 
 function TCloudMailRu.RefreshToken: Boolean;
@@ -441,6 +447,10 @@ begin
 		FOAuthToken := AuthResult.OAuthToken;
 		FUnitedParams := AuthResult.UnitedParams;
 		FCookieBasedAuth := AuthResult.CookieBased;
+		{Cookie mode uses different shard endpoints; clear any shards cached
+			before auth completed (e.g. pre-login descript.ion download attempt)}
+		if FCookieBasedAuth then
+			FShardManager.InvalidateAll;
 		FAuthorizationError := TAuthorizationError.Empty;
 		Result := True;
 	end else
