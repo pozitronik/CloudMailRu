@@ -25,7 +25,7 @@ type
 implementation
 
 uses
-	SysUtils, Math,
+	SysUtils, Classes, Math,
 	Winapi.Windows,
 	CloudConstants,
 	WFXTypes,

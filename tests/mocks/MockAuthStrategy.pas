@@ -38,7 +38,7 @@ type
 		constructor CreateOAuthSuccess(const AccessToken, RefreshToken: WideString; ExpiresIn: Integer);
 
 		{Create a mock that succeeds with cookie-based auth (VK ID)}
-		constructor CreateCookieSuccess(const CSRFToken: WideString);
+		class function CreateCookieSuccess(const CSRFToken: WideString): TMockAuthStrategy;
 
 		{IAuthStrategy implementation}
 		function Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP;
@@ -118,14 +118,12 @@ begin
 	FCallCount := 0;
 end;
 
-constructor TMockAuthStrategy.CreateCookieSuccess(const CSRFToken: WideString);
+class function TMockAuthStrategy.CreateCookieSuccess(const CSRFToken: WideString): TMockAuthStrategy;
 begin
-	inherited Create;
-	FShouldSucceed := True;
-	FCookieBased := True;
-	FAccessToken := CSRFToken;
-	FAuthenticateCalled := False;
-	FCallCount := 0;
+	Result := TMockAuthStrategy.Create;
+	Result.FShouldSucceed := True;
+	Result.FCookieBased := True;
+	Result.FAccessToken := CSRFToken;
 end;
 
 function TMockAuthStrategy.Authenticate(const Credentials: TAuthCredentials;
