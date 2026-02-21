@@ -64,6 +64,10 @@ type
 		{TIdHTTP instance for User-Agent manipulation}
 		FHTTP: TIdHTTP;
 
+		{Optional cookie manager for auth strategy testing}
+		FAuthCookieManager: TIdCookieManager;
+		FOwnsAuthCookieManager: Boolean;
+
 		function FindResponse(URL: WideString): TMockResponse;
 		function FindStreamResponse(URL: WideString; var Response: TMockStreamResponse): Boolean;
 		function DequeueResponse(URL: WideString; var Response: TMockResponse): Boolean;
@@ -98,6 +102,10 @@ type
 			ResultCode: Integer = FS_FILE_OK);
 		function HasPendingResponses(URLPattern: WideString): Boolean;
 		procedure ClearQueues;
+
+		{Cookie manager support for auth strategy testing}
+		procedure SetOwnedAuthCookie(Value: TIdCookieManager);
+		procedure SetExternalAuthCookie(Value: TIdCookieManager);
 
 		{Shard/dispatcher response helpers}
 		procedure SetShardResponse(ShardType: WideString; ShardURL: WideString);
@@ -153,6 +161,9 @@ begin
 	{Create TIdHTTP for User-Agent manipulation}
 	FHTTP := TIdHTTP.Create(nil);
 
+	FAuthCookieManager := nil;
+	FOwnsAuthCookieManager := False;
+
 	{Default: fail with empty response}
 	FDefaultResponse.Success := False;
 	FDefaultResponse.Answer := '';
@@ -185,6 +196,8 @@ begin
 	FreeAndNil(FCalls);
 	FreeAndNil(FPostData);
 	FreeAndNil(FHTTP);
+	if FOwnsAuthCookieManager then
+		FreeAndNil(FAuthCookieManager);
 	inherited;
 end;
 
@@ -457,6 +470,24 @@ begin
 		StreamQueue.Clear;
 end;
 
+{Cookie manager support}
+
+procedure TMockCloudHTTP.SetOwnedAuthCookie(Value: TIdCookieManager);
+begin
+	if FOwnsAuthCookieManager then
+		FreeAndNil(FAuthCookieManager);
+	FAuthCookieManager := Value;
+	FOwnsAuthCookieManager := True;
+end;
+
+procedure TMockCloudHTTP.SetExternalAuthCookie(Value: TIdCookieManager);
+begin
+	if FOwnsAuthCookieManager then
+		FreeAndNil(FAuthCookieManager);
+	FAuthCookieManager := Value;
+	FOwnsAuthCookieManager := False;
+end;
+
 {Shard/dispatcher response helpers}
 
 procedure TMockCloudHTTP.SetShardResponse(ShardType: WideString; ShardURL: WideString);
@@ -675,12 +706,12 @@ end;
 
 procedure TMockCloudHTTP.SetAuthCookie(Value: TIdCookieManager);
 begin
-	{No-op for mock}
+	SetExternalAuthCookie(Value);
 end;
 
 function TMockCloudHTTP.GetAuthCookie: TIdCookieManager;
 begin
-	Result := nil;
+	Result := FAuthCookieManager;
 end;
 
 procedure TMockCloudHTTP.SetCSRFToken(const Token: WideString);

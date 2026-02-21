@@ -264,9 +264,11 @@
         <DCCReference Include="..\src\Infrastructure\Authentication\VKIDAuthStrategy.pas"/>
         <DCCReference Include="..\src\Infrastructure\Authentication\CookiePersistence.pas"/>
         <DCCReference Include="Infrastructure\Authentication\CookiePersistenceTest.pas"/>
+        <DCCReference Include="Infrastructure\Authentication\VKIDAuthStrategyTest.pas"/>
         <DCCReference Include="..\src\Presentation\UI\Forms\VKIDLogin.pas">
             <Form>VKIDLoginForm</Form>
         </DCCReference>
+        <DCCReference Include="Presentation\UI\Forms\VKIDLoginFormTest.pas"/>
         <DCCReference Include="mocks\MockCloudHTTP.pas"/>
         <DCCReference Include="mocks\MockCloudContext.pas"/>
         <DCCReference Include="mocks\MockHTTPManager.pas"/>
