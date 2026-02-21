@@ -75,8 +75,8 @@ const
 
 	{Timestamp mode - unified timestamp preservation setting}
 	TimestampModeDisabled = 0;   {No timestamp preservation}
-	TimestampModeCloudTime = 1;  {Apply cloud server mtime on download}
-	TimestampModeFullSync = 2;   {Full metadata sync: upload stores local mtime, download restores it}
+	TimestampModeCloudTime = 1;  {Set cloud server mtime on downloaded files}
+	TimestampModeFullSync = 2;   {Preserve local mtime: upload stores it to cloud metadata, download restores it}
 
 	{Timestamp sync conflict resolution - what to do when cloud mtime differs from stored value}
 	TimestampConflictUseStored = 0; {Default: apply stored local mtime regardless of cloud changes}

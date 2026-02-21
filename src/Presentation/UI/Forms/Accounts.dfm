@@ -1236,8 +1236,8 @@ object AccountsForm: TAccountsForm
           OnChange = TimestampModeCBChange
           Items.Strings = (
             'Disabled'
-            'Cloud time'
-            'Full sync')
+            'Set cloud time on download'
+            'Preserve local time (upload & download)')
         end
         object TimestampConflictModeCB: TComboBox
           Left = 251
