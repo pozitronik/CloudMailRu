@@ -88,7 +88,7 @@ end;
 function TDefaultAuthStrategyFactory.CreateStrategy(AuthMethod: Integer): IAuthStrategy;
 begin
 	if AuthMethod = CLOUD_AUTH_METHOD_VKID then
-		Result := TVKIDAuthStrategy.Create
+		Result := TVKIDAuthStrategy.Create(TVKIDLoginProvider.Create)
 	else
 		Result := TOAuthAppAuthStrategy.Create;
 end;

@@ -11,13 +11,33 @@ unit VKIDAuthStrategy;
 interface
 
 uses
+	Winapi.Windows,
+	IdCookieManager,
 	AuthStrategy,
 	CloudHTTP,
 	Logger;
 
 type
-	TVKIDAuthStrategy = class(TInterfacedObject, IAuthStrategy)
+	{Abstraction for the VK ID login form, enabling testability
+		without WebView2 runtime or GUI.}
+	IVKIDLoginProvider = interface
+		['{F3A7E1D4-8B2C-4F6E-A9D1-5C3B7E0F2A84}']
+		function Execute(ParentWindowHandle: HWND; CookieManager: TIdCookieManager;
+			var CSRFToken: WideString; var ScriptResult: WideString): Boolean;
+	end;
+
+	{Default login provider that delegates to TVKIDLoginForm.Execute.}
+	TVKIDLoginProvider = class(TInterfacedObject, IVKIDLoginProvider)
 	public
+		function Execute(ParentWindowHandle: HWND; CookieManager: TIdCookieManager;
+			var CSRFToken: WideString; var ScriptResult: WideString): Boolean;
+	end;
+
+	TVKIDAuthStrategy = class(TInterfacedObject, IAuthStrategy)
+	private
+		FLoginProvider: IVKIDLoginProvider;
+	public
+		constructor Create(LoginProvider: IVKIDLoginProvider);
 		function Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 		function GetName: WideString;
 	end;
@@ -26,7 +46,6 @@ implementation
 
 uses
 	SysUtils, Classes, Math,
-	Winapi.Windows,
 	CloudConstants,
 	WFXTypes,
 	LanguageStrings,
@@ -35,7 +54,21 @@ uses
 	JSONHelper,
 	VKIDLogin;
 
+{TVKIDLoginProvider}
+
+function TVKIDLoginProvider.Execute(ParentWindowHandle: HWND; CookieManager: TIdCookieManager;
+	var CSRFToken: WideString; var ScriptResult: WideString): Boolean;
+begin
+	Result := TVKIDLoginForm.Execute(ParentWindowHandle, CookieManager, CSRFToken, ScriptResult);
+end;
+
 {TVKIDAuthStrategy}
+
+constructor TVKIDAuthStrategy.Create(LoginProvider: IVKIDLoginProvider);
+begin
+	inherited Create;
+	FLoginProvider := LoginProvider;
+end;
 
 function TVKIDAuthStrategy.Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 var
@@ -84,7 +117,7 @@ begin
 	{Show WebView2 login form: user logs in, browser navigates to cloud.mail.ru,
 		CSRF token is fetched via JavaScript (which has access to all browser cookies
 		including SDC), and cookies are injected into Indy's cookie manager.}
-	if not TVKIDLoginForm.Execute(0, HTTP.AuthCookie, CSRFToken, ScriptResult) then
+	if not FLoginProvider.Execute(0, HTTP.AuthCookie, CSRFToken, ScriptResult) then
 	begin
 		Logger.Log(LOG_LEVEL_WARNING, msgtype_details, 'VK ID: Login form returned False (script: %s)', [ScriptResult]);
 		Exit;

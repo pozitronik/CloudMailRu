@@ -6,10 +6,13 @@ unit MockAuthStrategy;
 interface
 
 uses
+	Winapi.Windows,
+	IdCookieManager,
 	AuthStrategy,
 	CloudHTTP,
 	Logger,
 	CloudOAuth,
+	VKIDAuthStrategy,
 	System.SysUtils;
 
 type
@@ -80,6 +83,28 @@ type
 
 		property CallCount: Integer read FCallCount;
 		procedure Reset;
+	end;
+
+	{Configurable mock for IVKIDLoginProvider -- replaces real WebView2 login form in tests}
+	TMockVKIDLoginProvider = class(TInterfacedObject, IVKIDLoginProvider)
+	private
+		FShouldSucceed: Boolean;
+		FCSRFToken: WideString;
+		FScriptResult: WideString;
+		FCallCount: Integer;
+		FLastCookieManager: TIdCookieManager;
+	public
+		constructor Create(ShouldSucceed: Boolean; const CSRFToken: WideString = '';
+			const ScriptResult: WideString = '');
+
+		function Execute(ParentWindowHandle: HWND; CookieManager: TIdCookieManager;
+			var CSRFToken: WideString; var ScriptResult: WideString): Boolean;
+
+		property CallCount: Integer read FCallCount;
+		property LastCookieManager: TIdCookieManager read FLastCookieManager;
+		property ShouldSucceed: Boolean read FShouldSucceed write FShouldSucceed;
+		procedure SetCSRFToken(const Value: WideString);
+		procedure SetScriptResult(const Value: WideString);
 	end;
 
 implementation
@@ -264,6 +289,39 @@ procedure TMockAuthStrategySequence.Reset;
 begin
 	FCurrentIndex := 0;
 	FCallCount := 0;
+end;
+
+{TMockVKIDLoginProvider}
+
+constructor TMockVKIDLoginProvider.Create(ShouldSucceed: Boolean; const CSRFToken: WideString;
+	const ScriptResult: WideString);
+begin
+	inherited Create;
+	FShouldSucceed := ShouldSucceed;
+	FCSRFToken := CSRFToken;
+	FScriptResult := ScriptResult;
+	FCallCount := 0;
+	FLastCookieManager := nil;
+end;
+
+function TMockVKIDLoginProvider.Execute(ParentWindowHandle: HWND; CookieManager: TIdCookieManager;
+	var CSRFToken: WideString; var ScriptResult: WideString): Boolean;
+begin
+	Inc(FCallCount);
+	FLastCookieManager := CookieManager;
+	CSRFToken := FCSRFToken;
+	ScriptResult := FScriptResult;
+	Result := FShouldSucceed;
+end;
+
+procedure TMockVKIDLoginProvider.SetCSRFToken(const Value: WideString);
+begin
+	FCSRFToken := Value;
+end;
+
+procedure TMockVKIDLoginProvider.SetScriptResult(const Value: WideString);
+begin
+	FScriptResult := Value;
 end;
 
 end.
