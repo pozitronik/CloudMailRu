@@ -56,6 +56,7 @@ begin
 	if ServerUrl = '' then
 	begin
 		ErrorMsg := 'Server URL is required';
+		Result := False;
 		Exit;
 	end;
 
