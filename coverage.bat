@@ -12,7 +12,7 @@ cd /d "%~dp0"
 :: Step 1: Compile Tests with MAP file
 :: ============================================
 echo.
-echo [1/3] Compiling tests with MAP file...
+echo [1/4] Compiling tests with MAP file...
 
 call "C:\Program Files (x86)\Embarcadero\Studio\37.0\bin\rsvars.bat"
 if errorlevel 1 (
