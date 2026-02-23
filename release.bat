@@ -126,7 +126,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "Copy-Item -Path 'x64' -Destination $tempDir -Recurse; " ^
     "Copy-Item -Path 'Win32\Release\MailRuCloud.wfx' -Destination $tempDir; " ^
     "Copy-Item -Path 'Win64\Release\MailRuCloud.wfx64' -Destination $tempDir; " ^
+    "Copy-Item -Path 'language' -Destination $tempDir -Recurse; " ^
     "Copy-Item -Path 'pluginst.inf' -Destination $tempDir; " ^
+    "Copy-Item -Path 'LICENSE' -Destination $tempDir; " ^
     "Copy-Item -Path 'README.MD' -Destination $tempDir; " ^
     "Compress-Archive -Path \"$tempDir\*\" -DestinationPath 'CloudMailRu.zip' -Force; " ^
     "Remove-Item -Recurse -Force $tempDir"
