@@ -94,7 +94,7 @@ procedure TCloudDirItemTest.TestNoneCreation;
 var
 	Item: TCloudDirItem;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Assert.IsTrue(Item.isNone);
 	Assert.IsEmpty(Item.name);
 	Assert.IsEmpty(Item.type_);
@@ -104,7 +104,7 @@ procedure TCloudDirItemTest.TestIsNoneProperty;
 var
 	Item: TCloudDirItem;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Assert.IsTrue(Item.isNone);
 
 	Item.name := 'somefile.txt';
@@ -115,7 +115,7 @@ procedure TCloudDirItemTest.TestIsDirProperty;
 var
 	Item: TCloudDirItem;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Item.type_ := TYPE_DIR;
 	Assert.IsTrue(Item.isDir);
 	Assert.IsFalse(Item.isFile);
@@ -128,7 +128,7 @@ procedure TCloudDirItemTest.TestIsFileProperty;
 var
 	Item: TCloudDirItem;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Item.type_ := TYPE_FILE;
 	Assert.IsTrue(Item.isFile);
 	Assert.IsFalse(Item.isDir);
@@ -141,7 +141,7 @@ procedure TCloudDirItemTest.TestIsPublishedProperty;
 var
 	Item: TCloudDirItem;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Assert.IsFalse(Item.isPublished);
 
 	Item.weblink := '/public/ABC123';
@@ -153,7 +153,7 @@ var
 	Item: TCloudDirItem;
 	FindData: tWIN32FINDDATAW;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Item.name := 'test.txt';
 	Item.type_ := TYPE_FILE;
 	Item.size := 1234;
@@ -172,7 +172,7 @@ var
 	Item: TCloudDirItem;
 	FindData: tWIN32FINDDATAW;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Item.name := 'mydir';
 	Item.type_ := TYPE_DIR;
 
@@ -186,7 +186,7 @@ var
 	Item: TCloudDirItem;
 	FindData: tWIN32FINDDATAW;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Item.name := 'mydir';
 	Item.type_ := TYPE_DIR;
 
@@ -200,7 +200,7 @@ var
 	Item: TCloudDirItem;
 	FindData: tWIN32FINDDATAW;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Item.name := 'deleted_file.txt';
 	Item.type_ := TYPE_FILE;
 	Item.deleted_from := '/original/path';
@@ -217,7 +217,7 @@ var
 	Item: TCloudDirItem;
 	FindData: tWIN32FINDDATAW;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Item.name := 'deleted_folder';
 	Item.type_ := TYPE_DIR;
 	Item.deleted_from := '/original/path';
@@ -237,7 +237,7 @@ var
 	Item: TCloudDirItem;
 	FindData: tWIN32FINDDATAW;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Item.name := 'shared_folder';
 	Item.type_ := TYPE_FILE; {Shared items might not be TYPE_DIR}
 	Item.kind := KIND_SHARED;
@@ -254,7 +254,7 @@ var
 	FindData: tWIN32FINDDATAW;
 	LargeSize: Int64;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Item.name := 'large_file.iso';
 	Item.type_ := TYPE_FILE;
 	LargeSize := Int64(10) * 1024 * 1024 * 1024; {10 GB}
@@ -272,7 +272,7 @@ var
 	Item: TCloudDirItem;
 	FindData: tWIN32FINDDATAW;
 begin
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 	Item.name := 'My Document.txt';
 	Item.type_ := TYPE_FILE;
 	Item.size := 100;

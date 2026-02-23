@@ -81,7 +81,7 @@ begin
 	Invite.size := 12345;
 
 	{ Call None to reset }
-	Invite := Invite.None;
+	Invite := TCloudIncomingInvite.None;
 
 	{ All fields should be zeroed }
 	Assert.AreEqual('', string(Invite.name));
@@ -93,7 +93,7 @@ procedure TCloudIncomingInviteTest.TestNoneIsNoneTrue;
 var
 	Invite: TCloudIncomingInvite;
 begin
-	Invite := Invite.None;
+	Invite := TCloudIncomingInvite.None;
 
 	Assert.IsTrue(Invite.isNone);
 end;

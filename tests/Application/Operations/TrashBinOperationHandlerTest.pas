@@ -389,7 +389,7 @@ begin
 	Listing[0] := CreateDeletedItem('file1.txt', '/docs/', 1);
 	Listing[1] := CreateDeletedItem('file2.txt', '/docs/', 2);
 	Listing[2] := CreateDeletedItem('file3.txt', '/docs/', 3);
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 
 	FHandler.Execute(0, FMockServiceIntf, Listing, Item, True, 'account',
 		function(ParentWindow: HWND; Items: TCloudDirItemList;
@@ -411,7 +411,7 @@ begin
 	Listing[0] := CreateDeletedItem('file1.txt', '/docs/', 1);
 	Listing[1] := CreateDeletedItem('file2.txt', '/docs/', 2);
 	Listing[2] := CreateDeletedItem('file3.txt', '/docs/', 3);
-	Item := Item.None;
+	Item := TCloudDirItem.None;
 
 	FMockService.SetTrashbinRestoreResult(False); {All will fail, but we want to check it stops}
 

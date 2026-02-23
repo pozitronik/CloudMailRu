@@ -685,7 +685,7 @@ begin
 	begin {Main trashbin folder properties}
 		if not Cloud.ListingService.GetTrashbin(CurrentListing) then
 			exit(FS_EXEC_ERROR);
-		CurrentItem := CurrentItem.None;
+		CurrentItem := TCloudDirItem.None;
 	end else begin {One item in trashbin}
 		{For identically named files in trash, properties of the first match are shown}
 		CurrentItem := FindListingItemByPath(CurrentListing, RealPath);

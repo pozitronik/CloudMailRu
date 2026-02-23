@@ -40,7 +40,7 @@ type
 		property isDir: Boolean read GetIsDir;
 		property isFile: Boolean read GetIsFile;
 		property isPublished: Boolean read GetIsPublished;
-		function None: TCloudDirItem; // Creates a special record, which indicate that Item is not found/not applicable.
+		class function None: TCloudDirItem; static; // Creates a special record, which indicate that Item is not found/not applicable.
 		function ToFindData(DirsAsSymlinks: Boolean = false): tWIN32FINDDATAW;
 	End;
 
@@ -68,7 +68,7 @@ begin
 	Result := self.weblink <> EmptyWideStr;
 end;
 
-function TCloudDirItem.None: TCloudDirItem;
+class function TCloudDirItem.None: TCloudDirItem;
 begin
 	Result := Default(TCloudDirItem);
 end;

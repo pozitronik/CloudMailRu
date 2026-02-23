@@ -21,7 +21,7 @@ type
 	public
 		property isNone: Boolean read GetIsNone;
 		property isMounted: Boolean read GetIsMounted;
-		function None: TCloudIncomingInvite; // Creates a special record, which indicate that Item is not found/not applicable.
+		class function None: TCloudIncomingInvite; static; // Creates a special record, which indicate that Item is not found/not applicable.
 	end;
 
 implementation
@@ -38,7 +38,7 @@ begin
 	result := self.name = EmptyWideStr;
 end;
 
-function TCloudIncomingInvite.None: TCloudIncomingInvite;
+class function TCloudIncomingInvite.None: TCloudIncomingInvite;
 begin
 	Result := Default(TCloudIncomingInvite);
 end;

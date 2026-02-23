@@ -77,7 +77,7 @@ end;
 
 function TSharedItemActionHandlerTest.CreateFileItem(const Home, Name: WideString): TCloudDirItem;
 begin
-	Result := Result.None;
+	Result := TCloudDirItem.None;
 	Result.home := Home;
 	Result.name := Name;
 	Result.type_ := TYPE_FILE;
@@ -85,7 +85,7 @@ end;
 
 function TSharedItemActionHandlerTest.CreateFolderItem(const Home, Name: WideString): TCloudDirItem;
 begin
-	Result := Result.None;
+	Result := TCloudDirItem.None;
 	Result.home := Home;
 	Result.name := Name;
 	Result.type_ := TYPE_DIR;

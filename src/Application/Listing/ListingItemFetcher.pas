@@ -69,7 +69,7 @@ end;
 
 function TListingItemFetcher.RefreshAndSearch(var Listing: TCloudDirItemList; const Path: TRealPath; Cloud: TCloudMailRu): TCloudDirItem;
 begin
-	Result := Result.None;
+	Result := TCloudDirItem.None;
 
 	{If not found (e.g. pressed Space on a folder), query cloud directly}
 	if Path.trashDir then {Trash -- refresh listing, search there}

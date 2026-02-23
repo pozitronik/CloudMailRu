@@ -31,7 +31,7 @@ begin
 	for CurrentItem in self do
 		if CurrentItem.home = HomePath then
 			exit(CurrentItem);
-	exit(CurrentItem.None);
+	exit(TCloudDirItem.None);
 end;
 
 function TCloudDirItemListHelper.FindByName(ItemName: WideString): TCloudDirItem;
@@ -41,7 +41,7 @@ begin
 	for CurrentItem in self do
 		if CurrentItem.name = ItemName then
 			exit(CurrentItem);
-	exit(CurrentItem.None);
+	exit(TCloudDirItem.None);
 end;
 
 procedure TCloudDirItemListHelper.Append(const Source: TCloudDirItemList);

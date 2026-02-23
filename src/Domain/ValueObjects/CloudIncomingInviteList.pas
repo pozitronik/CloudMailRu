@@ -21,7 +21,7 @@ begin
 	for CurrentItem in self do
 		if CurrentItem.name = ItemName then
 			Exit(CurrentItem);
-	Exit(CurrentItem.None)
+	Exit(TCloudIncomingInvite.None)
 end;
 
 end.
