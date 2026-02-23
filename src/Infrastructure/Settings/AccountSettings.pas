@@ -25,12 +25,12 @@ type
 		EncryptFiles: Boolean;
 		CryptPasswordStorage: Integer;
 		CryptFilesPassword: WideString; {Only populated when storage = CryptPasswordStorageIniFile}
-		CipherProfileId: WideString; //Cipher profile identifier for encryption backend selection
-		Server: WideString; //Server profile name, empty = cloud.mail.ru default
-		CryptedGUIDFiles: WideString; //The hash of files encryption password to check its validity
-		AuthMethod: Integer; //Authentication method: 4=OAuth app password, 5=VK ID
-		UseAppPassword: Boolean; //True if password is an app password (for OAuth)
-		PersistCookies: Boolean; //Save VK ID session cookies for reuse across restarts
+		CipherProfileId: WideString; {Cipher profile identifier for encryption backend selection}
+		Server: WideString; {Server profile name, empty = cloud.mail.ru default}
+		CryptedGUIDFiles: WideString; {The hash of files encryption password to check its validity}
+		AuthMethod: Integer; {Authentication method: 4=OAuth app password, 5=VK ID}
+		UseAppPassword: Boolean; {True if password is an app password (for OAuth)}
+		PersistCookies: Boolean; {Save VK ID session cookies for reuse across restarts}
 	private
 		FUser: WideString;
 		FDomain: WideString;
