@@ -89,7 +89,7 @@ var
 	Stream: TStringStream;
 begin
 	Stream := TStringStream.Create('', Encoding);
-	Result := TStreamReader.Create(Stream, Encoding, False);
+	Result := TStreamReader.Create(Stream, Encoding, True);
 end;
 
 function TRealSizeFileSystem.GetTmpFileName(const Prefix: WideString): WideString;
