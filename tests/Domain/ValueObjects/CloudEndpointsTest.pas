@@ -50,8 +50,6 @@ type
 		[Test]
 		procedure TestApiFolderSharedInfo;
 		[Test]
-		procedure TestApiFolderInvites;
-		[Test]
 		procedure TestApiFolderShare;
 		[Test]
 		procedure TestApiFolderUnshare;
@@ -242,14 +240,6 @@ begin
 	Assert.AreEqual(API_FOLDER_SHARED_INFO, Endpoints.ApiFolderSharedInfo);
 end;
 
-procedure TCloudEndpointsTest.TestApiFolderInvites;
-var
-	Endpoints: TCloudEndpoints;
-begin
-	Endpoints := TCloudEndpoints.CreateDefaults;
-	Assert.AreEqual(API_FOLDER_INVITES, Endpoints.ApiFolderInvites);
-end;
-
 procedure TCloudEndpointsTest.TestApiFolderShare;
 var
 	Endpoints: TCloudEndpoints;
@@ -372,7 +362,6 @@ begin
 	Assert.AreEqual(API_FOLDER, Endpoints.ApiFolder);
 	Assert.AreEqual(API_FOLDER_ADD, Endpoints.ApiFolderAdd);
 	Assert.AreEqual(API_FOLDER_SHARED_INFO, Endpoints.ApiFolderSharedInfo);
-	Assert.AreEqual(API_FOLDER_INVITES, Endpoints.ApiFolderInvites);
 	Assert.AreEqual(API_FOLDER_SHARE, Endpoints.ApiFolderShare);
 	Assert.AreEqual(API_FOLDER_UNSHARE, Endpoints.ApiFolderUnshare);
 	Assert.AreEqual(API_FOLDER_MOUNT, Endpoints.ApiFolderMount);
@@ -422,7 +411,6 @@ begin
 	Assert.StartsWith(CustomBase, Endpoints.ApiFolder);
 	Assert.StartsWith(CustomBase, Endpoints.ApiFolderAdd);
 	Assert.StartsWith(CustomBase, Endpoints.ApiFolderSharedInfo);
-	Assert.StartsWith(CustomBase, Endpoints.ApiFolderInvites);
 	Assert.StartsWith(CustomBase, Endpoints.ApiFolderShare);
 	Assert.StartsWith(CustomBase, Endpoints.ApiFolderUnshare);
 	Assert.StartsWith(CustomBase, Endpoints.ApiFolderMount);

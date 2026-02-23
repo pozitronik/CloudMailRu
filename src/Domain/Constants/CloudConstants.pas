@@ -21,7 +21,6 @@ const
 	API_FOLDER_LIMIT = 65535;
 	API_FOLDER_ADD = 'https://cloud.mail.ru/api/v2/folder/add';
 	API_FOLDER_SHARED_INFO = 'https://cloud.mail.ru/api/v2/folder/shared/info'; {GET}
-	API_FOLDER_INVITES = 'https://cloud.mail.ru/api/v2/folder/invites'; {TODO: not used in production code -- investigate if needed for invite listing vs /folder/shared/incoming}
 	API_FOLDER_SHARE = 'https://cloud.mail.ru/api/v2/folder/share';
 	API_FOLDER_UNSHARE = 'https://cloud.mail.ru/api/v2/folder/unshare';
 	API_FOLDER_MOUNT = 'https://cloud.mail.ru/api/v2/folder/mount';
@@ -31,7 +30,6 @@ const
 	API_TRASHBIN = 'https://cloud.mail.ru/api/v2/trashbin';
 	API_TRASHBIN_RESTORE = 'https://cloud.mail.ru/api/v2/trashbin/restore';
 	API_TRASHBIN_EMPTY = 'https://cloud.mail.ru/api/v2/trashbin/empty';
-	API_AB_CONTACTS = '';
 	API_DISPATCHER = 'https://cloud.mail.ru/api/v2/dispatcher/';
 	API_USER_SPACE = 'https://cloud.mail.ru/api/v2/user/space';
 	API_CLONE = 'https://cloud.mail.ru/api/v2/clone';
@@ -55,7 +53,6 @@ const
 	CLOUD_ERROR_READONLY = 4; {readonly|read_only: read-only access}
 	CLOUD_ERROR_NAME_LENGTH_EXCEEDED = 5; {name_length_exceeded: folder name too long}
 	CLOUD_ERROR_OVERQUOTA = 7; {overquota: not enough cloud space}
-	CLOUD_ERROR_QUOTA_EXCEEDED = 7; {quota_exceeded: not enough cloud space}
 	CLOUD_ERROR_NOT_EXISTS = 8; {not_exists: copied link does not exist}
 	CLOUD_ERROR_OWN = 9; {own: cannot clone your own link}
 	CLOUD_ERROR_NAME_TOO_LONG = 10; {name_too_long: file name too long}
@@ -112,11 +109,7 @@ const
 	SHARD_TYPE_WEBLINK_VIEW = 'weblink_view';
 	SHARD_TYPE_WEBLINK_VIDEO = 'weblink_video';
 	SHARD_TYPE_WEBLINK_GET = 'weblink_get';
-	SHARD_TYPE_STOCK = 'stock';
 	SHARD_TYPE_WEBLINK_THUMBNAILS = 'weblink_thumbnails';
-	SHARD_TYPE_PUBLIC_UPLOAD = 'public_upload';
-	SHARD_TYPE_AUTH = 'auth';
-	SHARD_TYPE_WEB = 'web';
 	SHARD_TYPE_UPLOAD = 'upload';
 	SHARD_TYPE_GET = 'get';
 	SHARD_TYPE_THUMBNAILS = 'thumbnails';

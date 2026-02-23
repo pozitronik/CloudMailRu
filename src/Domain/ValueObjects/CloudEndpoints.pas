@@ -30,7 +30,6 @@ type
 		function ApiFolder: WideString;
 		function ApiFolderAdd: WideString;
 		function ApiFolderSharedInfo: WideString;
-		function ApiFolderInvites: WideString;
 		function ApiFolderShare: WideString;
 		function ApiFolderUnshare: WideString;
 		function ApiFolderMount: WideString;
@@ -114,11 +113,6 @@ end;
 function TCloudEndpoints.ApiFolderSharedInfo: WideString;
 begin
 	Result := ApiBase + '/folder/shared/info';
-end;
-
-function TCloudEndpoints.ApiFolderInvites: WideString;
-begin
-	Result := ApiBase + '/folder/invites';
 end;
 
 function TCloudEndpoints.ApiFolderShare: WideString;
