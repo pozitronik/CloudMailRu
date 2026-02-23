@@ -88,7 +88,7 @@ begin
 	Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, REQUESTING_VKID_LOGIN, [Credentials.Email]);
 
 	if HTTP.AuthCookie = nil then
-		Logger.Log(LOG_LEVEL_WARNING, msgtype_details, 'VK ID: AuthCookie is nil!', []);
+		Logger.Log(LOG_LEVEL_WARNING, msgtype_details, VKID_AUTH_COOKIE_NIL, []);
 
 	{Try to restore session from saved cookies}
 	if Credentials.CookieFilePath <> '' then
@@ -101,7 +101,7 @@ begin
 				ShowProgress := False;
 				if HTTP.GetPage(Credentials.CsrfUrl, JSON, ShowProgress) and getBodyToken(JSON, FreshCSRFToken) then
 				begin
-					Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, 'VK ID: Restored session from cookies, CSRF refreshed', []);
+					Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, VKID_SESSION_RESTORED, []);
 					// Save updated cookies (server may have rotated them)
 					Persistence.Save(HTTP.AuthCookie, FreshCSRFToken);
 					Result := TAuthResult.CreateCookieSuccess(FreshCSRFToken);
@@ -109,7 +109,7 @@ begin
 				end;
 				// Session expired - clear stale cookies before showing WebView2
 				HTTP.AuthCookie.CookieCollection.Clear;
-				Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, 'VK ID: Saved cookies expired, showing login form', []);
+				Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, VKID_COOKIES_EXPIRED, []);
 			end;
 		finally
 			Persistence.Free;
@@ -121,14 +121,14 @@ begin
 		including SDC), and cookies are injected into Indy's cookie manager.}
 	if not FLoginProvider.Execute(0, HTTP.AuthCookie, CSRFToken, ScriptResult) then
 	begin
-		Logger.Log(LOG_LEVEL_WARNING, msgtype_details, 'VK ID: Login form returned False (script: %s)', [ScriptResult]);
+		Logger.Log(LOG_LEVEL_WARNING, msgtype_details, VKID_LOGIN_FORM_FAILED, [ScriptResult]);
 		Exit;
 	end;
 
 	CookieCount := HTTP.AuthCookie.CookieCollection.Count;
-	Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, 'VK ID: Cookies=%d, CSRF length=%d, script=%s', [CookieCount, Length(CSRFToken), ScriptResult]);
+	Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, VKID_LOGIN_DETAILS, [CookieCount, Length(CSRFToken), ScriptResult]);
 	for I := 0 to Min(CookieCount - 1, 9) do
-		Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, 'VK ID: Cookie[%d] name=%s domain=%s path=%s', [
+		Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, VKID_COOKIE_DETAIL, [
 			I,
 			HTTP.AuthCookie.CookieCollection.Cookies[I].CookieName,
 			HTTP.AuthCookie.CookieCollection.Cookies[I].Domain,
@@ -137,7 +137,7 @@ begin
 
 	if CSRFToken = '' then
 	begin
-		Logger.Log(LOG_LEVEL_WARNING, msgtype_details, 'VK ID: CSRF token is empty, script result: %s', [ScriptResult]);
+		Logger.Log(LOG_LEVEL_WARNING, msgtype_details, VKID_CSRF_EMPTY, [ScriptResult]);
 		Result := TAuthResult.CreateFailure(ERR_VKID_CSRF_FAILED);
 		Exit;
 	end;
@@ -148,7 +148,7 @@ begin
 		Persistence := TCookiePersistence.Create(Credentials.CookieFilePath, FFileSystem);
 		try
 			Persistence.Save(HTTP.AuthCookie, CSRFToken);
-			Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, 'VK ID: Cookies saved to %s', [Credentials.CookieFilePath]);
+			Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, VKID_COOKIES_SAVED, [Credentials.CookieFilePath]);
 		finally
 			Persistence.Free;
 		end;
