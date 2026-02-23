@@ -9,28 +9,15 @@ uses
 	DUnitX.TestFramework,
 	WFXTypes,
 	SettingsConstants,
-	Logger,
-	LocalFileConflictResolver;
+	LocalFileConflictResolver,
+	MockLogger;
 
 type
-	{Mock logger to track log calls}
-	TMockConflictLogger = class(TInterfacedObject, ILogger)
-	public
-		LogCalls: Integer;
-		LastMessage: WideString;
-
-		constructor Create;
-
-		procedure Log(LogLevel, MsgType: Integer; Msg: WideString; const Params: array of const); overload;
-		procedure Log(LogLevel, MsgType: Integer; Msg: WideString); overload;
-		procedure LogError(Msg: WideString);
-	end;
-
 	[TestFixture]
 	TLocalFileConflictResolverTest = class
 	private
 		FResolver: ILocalFileConflictResolver;
-		FLogger: TMockConflictLogger;
+		FLogger: TMockLogger;
 	public
 		[Setup]
 		procedure Setup;
@@ -72,38 +59,11 @@ var
 	TestTempDir: string;
 	TestExistingFile: string;
 
-{TMockConflictLogger}
-
-constructor TMockConflictLogger.Create;
-begin
-	inherited Create;
-	LogCalls := 0;
-	LastMessage := '';
-end;
-
-procedure TMockConflictLogger.Log(LogLevel, MsgType: Integer; Msg: WideString; const Params: array of const);
-begin
-	Inc(LogCalls);
-	LastMessage := Msg;
-end;
-
-procedure TMockConflictLogger.Log(LogLevel, MsgType: Integer; Msg: WideString);
-begin
-	Inc(LogCalls);
-	LastMessage := Msg;
-end;
-
-procedure TMockConflictLogger.LogError(Msg: WideString);
-begin
-	Inc(LogCalls);
-	LastMessage := Msg;
-end;
-
 {TLocalFileConflictResolverTest}
 
 procedure TLocalFileConflictResolverTest.Setup;
 begin
-	FLogger := TMockConflictLogger.Create;
+	FLogger := TMockLogger.Create;
 	FResolver := TLocalFileConflictResolver.Create(FLogger);
 
 	{Create a temp file for testing "file exists" scenarios}

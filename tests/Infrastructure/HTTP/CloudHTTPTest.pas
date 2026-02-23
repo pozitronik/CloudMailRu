@@ -19,34 +19,12 @@ uses
 	WFXTypes,
 	CloudConstants,
 	Logger,
+	MockLogger,
 	Progress,
 	IdCookieManager,
 	IdHTTP;
 
 type
-	TLogEntry = record
-		LogLevel: Integer;
-		Message: WideString;
-	end;
-
-	{Mock logger that tracks log calls}
-	TMockLoggerForHTTP = class(TInterfacedObject, ILogger)
-	private
-		FLogCalled: Boolean;
-		FLastLogLevel: Integer;
-		FLastMessage: WideString;
-		FEntries: TArray<TLogEntry>;
-	public
-		constructor Create;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
-		function HasLogWithLevel(Level: Integer): Boolean;
-		property LogCalled: Boolean read FLogCalled;
-		property LastLogLevel: Integer read FLastLogLevel;
-		property LastMessage: WideString read FLastMessage;
-		property Entries: TArray<TLogEntry> read FEntries;
-	end;
-
 	[TestFixture]
 	TNullCloudHTTPTest = class
 	private
@@ -335,7 +313,7 @@ type
 	TCloudMailRuHTTPLoggingTest = class
 	private
 		FHTTP: TCloudMailRuHTTP;
-		FMockLogger: TMockLoggerForHTTP;
+		FMockLogger: TMockLogger;
 	public
 		[Setup]
 		procedure Setup;
@@ -360,49 +338,6 @@ uses
 	IdStack,
 	IdHTTPHeaderInfo,
 	IdComponent;
-
-constructor TMockLoggerForHTTP.Create;
-begin
-	inherited Create;
-	FLogCalled := False;
-	FEntries := nil;
-end;
-
-procedure TMockLoggerForHTTP.Log(LogLevel, MsgType: Integer; LogString: WideString);
-var
-	Entry: TLogEntry;
-begin
-	FLogCalled := True;
-	FLastLogLevel := LogLevel;
-	FLastMessage := LogString;
-	Entry.LogLevel := LogLevel;
-	Entry.Message := LogString;
-	SetLength(FEntries, Length(FEntries) + 1);
-	FEntries[High(FEntries)] := Entry;
-end;
-
-procedure TMockLoggerForHTTP.Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const);
-var
-	Entry: TLogEntry;
-begin
-	FLogCalled := True;
-	FLastLogLevel := LogLevel;
-	FLastMessage := Format(LogString, Args);
-	Entry.LogLevel := LogLevel;
-	Entry.Message := FLastMessage;
-	SetLength(FEntries, Length(FEntries) + 1);
-	FEntries[High(FEntries)] := Entry;
-end;
-
-function TMockLoggerForHTTP.HasLogWithLevel(Level: Integer): Boolean;
-var
-	i: Integer;
-begin
-	Result := False;
-	for i := 0 to High(FEntries) do
-		if FEntries[i].LogLevel = Level then
-			Exit(True);
-end;
 
 {TNullCloudHTTPTest}
 
@@ -974,10 +909,10 @@ end;
 procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_WithLogging_LogsHTTPProtocolException;
 var
 	E: EIdHTTPProtocolException;
-	MockLogger: TMockLoggerForHTTP;
+	MockLogger: TMockLogger;
 	HTTP: TCloudMailRuHTTP;
 begin
-	MockLogger := TMockLoggerForHTTP.Create;
+	MockLogger := TMockLogger.Create;
 	HTTP := TCloudMailRuHTTP.Create(FSettings, TIndySSLHandlerFactory.Create, MockLogger, TNullProgress.Create);
 	try
 		E := EIdHTTPProtocolException.CreateError(500, 'Internal Server Error', 'Server error details');
@@ -995,10 +930,10 @@ end;
 procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_WithLogging_LogsSocketError;
 var
 	E: EIdSocketError;
-	MockLogger: TMockLoggerForHTTP;
+	MockLogger: TMockLogger;
 	HTTP: TCloudMailRuHTTP;
 begin
-	MockLogger := TMockLoggerForHTTP.Create;
+	MockLogger := TMockLogger.Create;
 	HTTP := TCloudMailRuHTTP.Create(FSettings, TIndySSLHandlerFactory.Create, MockLogger, TNullProgress.Create);
 	try
 		E := EIdSocketError.Create('Connection refused');
@@ -1016,10 +951,10 @@ end;
 procedure TCloudMailRuHTTPExceptionHandlerTest.TestExceptionHandler_WithLogging_LogsGenericException;
 var
 	E: Exception;
-	MockLogger: TMockLoggerForHTTP;
+	MockLogger: TMockLogger;
 	HTTP: TCloudMailRuHTTP;
 begin
-	MockLogger := TMockLoggerForHTTP.Create;
+	MockLogger := TMockLogger.Create;
 	HTTP := TCloudMailRuHTTP.Create(FSettings, TIndySSLHandlerFactory.Create, MockLogger, TNullProgress.Create);
 	try
 		E := Exception.Create('Something went wrong');
@@ -1245,7 +1180,7 @@ procedure TCloudMailRuHTTPLoggingTest.Setup;
 var
 	Settings: TConnectionSettings;
 begin
-	FMockLogger := TMockLoggerForHTTP.Create;
+	FMockLogger := TMockLogger.Create;
 	Settings := Default(TConnectionSettings);
 	Settings.SocketTimeout := 500;
 	FHTTP := TCloudMailRuHTTP.Create(Settings, TIndySSLHandlerFactory.Create, FMockLogger, TNullProgress.Create);

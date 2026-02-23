@@ -24,29 +24,18 @@ uses
 	HTTPManager,
 	MockCloudHTTP,
 	MockHTTPManager,
+	MockLogger,
 	ListingItemFetcher,
 	OpenSSLProvider,
 	AccountCredentialsProvider,
 	TestHelper;
 
 type
-	{Mock logger}
-	TMockFetcherLogger = class(TInterfacedObject, ILogger)
-	public
-		LogCalls: Integer;
-
-		constructor Create;
-
-		procedure Log(LogLevel, MsgType: Integer; Msg: WideString; const Params: array of const); overload;
-		procedure Log(LogLevel, MsgType: Integer; Msg: WideString); overload;
-		procedure LogError(Msg: WideString);
-	end;
-
 	[TestFixture]
 	TListingItemFetcherTest = class
 	private
 		FFetcher: IListingItemFetcher;
-		FLogger: TMockFetcherLogger;
+		FLogger: TMockLogger;
 		FMockHTTP: TMockCloudHTTP;
 		FMockHTTPManager: TMockHTTPManager;
 		FCloud: TCloudMailRu;
@@ -110,29 +99,6 @@ implementation
 uses
 	SysUtils;
 
-{TMockFetcherLogger}
-
-constructor TMockFetcherLogger.Create;
-begin
-	inherited Create;
-	LogCalls := 0;
-end;
-
-procedure TMockFetcherLogger.Log(LogLevel, MsgType: Integer; Msg: WideString; const Params: array of const);
-begin
-	Inc(LogCalls);
-end;
-
-procedure TMockFetcherLogger.Log(LogLevel, MsgType: Integer; Msg: WideString);
-begin
-	Inc(LogCalls);
-end;
-
-procedure TMockFetcherLogger.LogError(Msg: WideString);
-begin
-	Inc(LogCalls);
-end;
-
 {TListingItemFetcherTest}
 
 function TListingItemFetcherTest.CreateFileItem(const Name, HomePath: WideString): TCloudDirItem;
@@ -175,7 +141,7 @@ end;
 
 procedure TListingItemFetcherTest.Setup;
 begin
-	FLogger := TMockFetcherLogger.Create;
+	FLogger := TMockLogger.Create;
 	FFetcher := TListingItemFetcher.Create(FLogger);
 	FMockHTTP := TMockCloudHTTP.Create;
 	FMockHTTPManager := TMockHTTPManager.Create(FMockHTTP);

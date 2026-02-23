@@ -22,6 +22,7 @@ uses
 	CloudOAuth,
 	MockCloudHTTP,
 	MockHTTPManager,
+	MockLogger,
 	AuthStrategy,
 	FileSystem,
 	OpenSSLProvider,
@@ -50,20 +51,6 @@ type
 		property AbortCheckCalled: Boolean read FAbortCheckCalled;
 	end;
 
-	{Mock logger that tracks log calls}
-	TMockCrossServerLogger = class(TInterfacedObject, ILogger)
-	private
-		FLogCalled: Boolean;
-		FLastLogLevel: Integer;
-		FLastMessage: WideString;
-	public
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString); overload;
-		procedure Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const); overload;
-		property LogCalled: Boolean read FLogCalled;
-		property LastLogLevel: Integer read FLastLogLevel;
-		property LastMessage: WideString read FLastMessage;
-	end;
-
 	{Testable CloudMailRu for cross-server tests -- allows setting server profile and OAuth token}
 	TCrossServerTestableCloud = class(TCloudMailRu)
 	public
@@ -76,7 +63,7 @@ type
 	private
 		FHandler: ICrossServerFileOperationHandler;
 		FMockRetryHandler: TMockCrossServerRetryHandler;
-		FMockLogger: TMockCrossServerLogger;
+		FMockLogger: TMockLogger;
 		FMockHTTP: TMockCloudHTTP;
 		FMockHTTPManager: TMockHTTPManager;
 		FOldCloud: TCrossServerTestableCloud;
@@ -211,22 +198,6 @@ begin
 		Result := FReturnValue;
 end;
 
-{TMockCrossServerLogger}
-
-procedure TMockCrossServerLogger.Log(LogLevel, MsgType: Integer; LogString: WideString);
-begin
-	FLogCalled := True;
-	FLastLogLevel := LogLevel;
-	FLastMessage := LogString;
-end;
-
-procedure TMockCrossServerLogger.Log(LogLevel, MsgType: Integer; LogString: WideString; const Args: array of const);
-begin
-	FLogCalled := True;
-	FLastLogLevel := LogLevel;
-	FLastMessage := LogString;
-end;
-
 {TCrossServerTestableCloud}
 
 procedure TCrossServerTestableCloud.SetUnitedParams(const Value: WideString);
@@ -246,7 +217,7 @@ begin
 	FMockHTTP := TMockCloudHTTP.Create;
 	FMockHTTPManager := TMockHTTPManager.Create(FMockHTTP);
 	FMockRetryHandler := TMockCrossServerRetryHandler.Create;
-	FMockLogger := TMockCrossServerLogger.Create;
+	FMockLogger := TMockLogger.Create;
 	FHandler := TCrossServerFileOperationHandler.Create(FMockRetryHandler, FMockLogger);
 	FOldCloud := nil;
 	FNewCloud := nil;
