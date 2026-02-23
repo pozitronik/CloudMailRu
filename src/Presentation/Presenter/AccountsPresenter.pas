@@ -395,7 +395,6 @@ type
 
 		{Cache helpers}
 		function GetResolvedCacheDir: WideString;
-		function FormatCacheSize(SizeBytes: Int64): WideString;
 		function CalculateDirSize(const Dir: WideString; const Mask: WideString): Int64;
 		procedure RefreshCacheSizes;
 
@@ -498,7 +497,8 @@ uses
 	CloudMailRuFactory,
 	CookiePersistence,
 	Logger,
-	Progress;
+	Progress,
+	StringHelper;
 
 const
 	DOT = '.';
@@ -2036,18 +2036,6 @@ begin
 			IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) + 'CloudMailRu\cache');
 end;
 
-function TAccountsPresenter.FormatCacheSize(SizeBytes: Int64): WideString;
-begin
-	if SizeBytes < 1024 then
-		Result := IntToStr(SizeBytes) + ' B'
-	else if SizeBytes < 1024 * 1024 then
-		Result := Format('%.1f KB', [SizeBytes / 1024.0])
-	else if SizeBytes < Int64(1024) * 1024 * 1024 then
-		Result := Format('%.1f MB', [SizeBytes / (1024.0 * 1024.0)])
-	else
-		Result := Format('%.2f GB', [SizeBytes / (1024.0 * 1024.0 * 1024.0)]);
-end;
-
 function TAccountsPresenter.CalculateDirSize(const Dir: WideString; const Mask: WideString): Int64;
 var
 	SR: TSearchRec;
@@ -2071,9 +2059,9 @@ var
 begin
 	CacheDir := GetResolvedCacheDir;
 	ListingSize := CalculateDirSize(CacheDir, '*.json');
-	FView.SetListingCacheSize(Format(DFM_LBL_LISTING_CACHE_SIZE, [FormatCacheSize(ListingSize)]));
+	FView.SetListingCacheSize(Format(DFM_LBL_LISTING_CACHE_SIZE, [FormatSize(ListingSize)]));
 	FileSize := CalculateDirSize(CacheDir + 'files\', '*.dat');
-	FView.SetFileCacheSize(Format(DFM_LBL_FILE_CACHE_SIZE, [FormatCacheSize(FileSize)]));
+	FView.SetFileCacheSize(Format(DFM_LBL_FILE_CACHE_SIZE, [FormatSize(FileSize)]));
 end;
 
 {Cache operations}
