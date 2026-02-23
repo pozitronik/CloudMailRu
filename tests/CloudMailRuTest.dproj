@@ -214,6 +214,7 @@
         <DCCReference Include="..\src\Presentation\Icon\IconHelper.pas"/>
         <DCCReference Include="Presentation\Icon\IconHelperTest.pas"/>
         <DCCReference Include="..\src\Domain\Services\CloudAuthorizationState.pas"/>
+        <DCCReference Include="Domain\Services\CloudAuthorizationStateTest.pas"/>
         <DCCReference Include="..\src\Domain\Services\CloudContext.pas"/>
         <DCCReference Include="..\src\Domain\Services\CloudMailRu.pas"/>
         <DCCReference Include="..\src\Domain\Services\CloudMailRuFactory.pas"/>
