@@ -936,8 +936,7 @@ begin
 		else if Profile.ServerUrl <> '' then
 		begin
 			{Try to fetch endpoints from server URL}
-			FServerConfigFetcher.Fetch(Profile.ServerUrl, Endpoints, ErrorMsg);
-			if ErrorMsg <> '' then
+			if not FServerConfigFetcher.Fetch(Profile.ServerUrl, Endpoints, ErrorMsg) then
 			begin
 				FView.ShowTestAccountError(ErrorMsg);
 				Exit;
@@ -1985,9 +1984,7 @@ begin
 	end;
 
 	Endpoints := TCloudEndpoints.CreateDefaults;
-	FServerConfigFetcher.Fetch(ServerUrl, Endpoints, ErrorMsg);
-
-	if ErrorMsg <> '' then
+	if not FServerConfigFetcher.Fetch(ServerUrl, Endpoints, ErrorMsg) then
 	begin
 		FView.SetServerStatus(ErrorMsg, False);
 		Exit;

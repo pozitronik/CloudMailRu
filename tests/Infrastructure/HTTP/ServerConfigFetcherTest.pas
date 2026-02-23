@@ -45,8 +45,8 @@ type
 		procedure TestFetchWithEmptyUrlFails;
 
 		[Test]
-		{Verifies that Fetch returns True on success}
-		procedure TestFetchReturnsTrue;
+		{Connection failure returns False with error message}
+		procedure TestFetchReturnsFalseOnConnectionError;
 
 		[Test]
 		{Verifies that null fetcher always returns False}
@@ -149,13 +149,16 @@ begin
 	Assert.IsNotEmpty(string(ErrorMsg));
 end;
 
-procedure TServerConfigFetcherTest.TestFetchReturnsTrue;
+procedure TServerConfigFetcherTest.TestFetchReturnsFalseOnConnectionError;
 var
 	Endpoints: TCloudEndpoints;
 	ErrorMsg: WideString;
+	Success: Boolean;
 begin
 	Endpoints := TCloudEndpoints.CreateDefaults;
-	Assert.IsTrue(FFetcher.Fetch('http://myserver:8080', Endpoints, ErrorMsg));
+	Success := FFetcher.Fetch('http://myserver:8080', Endpoints, ErrorMsg);
+	Assert.IsFalse(Success, 'Fetch to unreachable server should return False');
+	Assert.IsNotEmpty(string(ErrorMsg), 'ErrorMsg should describe the connection failure');
 end;
 
 procedure TServerConfigFetcherTest.TestNullFetcherReturnsFalse;

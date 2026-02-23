@@ -50,7 +50,7 @@ var
 	SSLHandler: TIdSSLIOHandlerSocketOpenSSL;
 	ResponseStream: TStringStream;
 begin
-	Result := False;
+	Result := True;
 	ErrorMsg := '';
 
 	if ServerUrl = '' then
@@ -88,7 +88,10 @@ begin
 				TCloudEndpointsJsonAdapter.Merge(ResponseStream.DataString, Endpoints);
 			except
 				on E: Exception do
-					ErrorMsg := E.Message;
+					begin
+						ErrorMsg := E.Message;
+						Result := False;
+					end;
 			end;
 		finally
 			ResponseStream.Free;
@@ -96,8 +99,6 @@ begin
 	finally
 		HTTP.Free;
 	end;
-
-	Result := True;
 end;
 
 {TNullServerConfigFetcher}
