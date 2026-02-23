@@ -134,7 +134,7 @@ uses
 procedure TVKIDAuthStrategyTest.Setup;
 begin
 	FMockLoginProvider := TMockVKIDLoginProvider.Create(True, 'mock_csrf', 'ok');
-	FStrategy := TVKIDAuthStrategy.Create(FMockLoginProvider);
+	FStrategy := TVKIDAuthStrategy.Create(FMockLoginProvider, TWindowsFileSystem.Create);
 	FHTTP := TMockCloudHTTP.Create;
 	FHTTPIntf := FHTTP;
 	FLogger := TMockLogger.Create;

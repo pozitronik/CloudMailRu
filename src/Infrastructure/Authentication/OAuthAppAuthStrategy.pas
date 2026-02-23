@@ -36,6 +36,7 @@ uses
 	WFXTypes,
 	LanguageStrings,
 	StringHelper,
+	FileSystem,
 	VKIDAuthStrategy;
 
 {TOAuthAppAuthStrategy}
@@ -88,7 +89,7 @@ end;
 function TDefaultAuthStrategyFactory.CreateStrategy(AuthMethod: Integer): IAuthStrategy;
 begin
 	if AuthMethod = CLOUD_AUTH_METHOD_VKID then
-		Result := TVKIDAuthStrategy.Create(TVKIDLoginProvider.Create)
+		Result := TVKIDAuthStrategy.Create(TVKIDLoginProvider.Create, TWindowsFileSystem.Create)
 	else
 		Result := TOAuthAppAuthStrategy.Create;
 end;

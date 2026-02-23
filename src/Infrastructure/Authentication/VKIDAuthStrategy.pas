@@ -15,6 +15,7 @@ uses
 	IdCookieManager,
 	AuthStrategy,
 	CloudHTTP,
+	FileSystem,
 	Logger;
 
 type
@@ -36,8 +37,9 @@ type
 	TVKIDAuthStrategy = class(TInterfacedObject, IAuthStrategy)
 	private
 		FLoginProvider: IVKIDLoginProvider;
+		FFileSystem: IFileSystem;
 	public
-		constructor Create(LoginProvider: IVKIDLoginProvider);
+		constructor Create(LoginProvider: IVKIDLoginProvider; FileSystem: IFileSystem);
 		function Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
 		function GetName: WideString;
 	end;
@@ -49,7 +51,6 @@ uses
 	CloudConstants,
 	WFXTypes,
 	LanguageStrings,
-	FileSystem,
 	CookiePersistence,
 	JSONHelper,
 	VKIDLogin;
@@ -64,10 +65,11 @@ end;
 
 {TVKIDAuthStrategy}
 
-constructor TVKIDAuthStrategy.Create(LoginProvider: IVKIDLoginProvider);
+constructor TVKIDAuthStrategy.Create(LoginProvider: IVKIDLoginProvider; FileSystem: IFileSystem);
 begin
 	inherited Create;
 	FLoginProvider := LoginProvider;
+	FFileSystem := FileSystem;
 end;
 
 function TVKIDAuthStrategy.Authenticate(const Credentials: TAuthCredentials; HTTP: ICloudHTTP; Logger: ILogger): TAuthResult;
@@ -91,7 +93,7 @@ begin
 	{Try to restore session from saved cookies}
 	if Credentials.CookieFilePath <> '' then
 	begin
-		Persistence := TCookiePersistence.Create(Credentials.CookieFilePath, TWindowsFileSystem.Create);
+		Persistence := TCookiePersistence.Create(Credentials.CookieFilePath, FFileSystem);
 		try
 			if Persistence.Load(HTTP.AuthCookie, CSRFToken) then
 			begin
@@ -143,7 +145,7 @@ begin
 	{Save cookies for future session reuse}
 	if Credentials.CookieFilePath <> '' then
 	begin
-		Persistence := TCookiePersistence.Create(Credentials.CookieFilePath, TWindowsFileSystem.Create);
+		Persistence := TCookiePersistence.Create(Credentials.CookieFilePath, FFileSystem);
 		try
 			Persistence.Save(HTTP.AuthCookie, CSRFToken);
 			Logger.Log(LOG_LEVEL_DEBUG, msgtype_details, 'VK ID: Cookies saved to %s', [Credentials.CookieFilePath]);
