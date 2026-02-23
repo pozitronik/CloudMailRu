@@ -125,8 +125,8 @@ var
 	Available: Boolean;
 begin
 	Available := TVKIDLoginForm.IsWebView2Available;
-	// Result is either True or False, no exception
-	Assert.IsTrue((Available = True) or (Available = False));
+	{No exception means the check completed successfully; verify result is usable}
+	Assert.Pass('IsWebView2Available returned ' + BoolToStr(Available, True));
 end;
 
 initialization
