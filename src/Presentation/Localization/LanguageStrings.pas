@@ -11,7 +11,6 @@ uses
 	TranslationRegistry maps key names to var addresses for .lng file parsing.}
 var
 	ACCOUNT_TRASH: WideString;
-	ASK_CONTINUE: WideString;
 	ASK_ENCRYPTION_PASSWORD: WideString;
 	ASK_OVERWRITE_ACCOUNT: WideString;
 	ASK_SAVE_ACCOUNT_CHANGES: WideString;
@@ -64,7 +63,6 @@ var
 	ERR_CLOUD_ERROR_UNPROCESSABLE_ENTRY: WideString;
 	ERR_CLOUD_ERROR_USER_LIMIT_EXCEEDED: WideString;
 	ERR_CLOUD_ERROR_VIRUS_SCAN_FAIL: WideString;
-	ERR_CONFIRMATION: WideString;
 	ERR_COPY_SAME_DIR_NOT_SUPPORTED: WideString;
 	ERR_DECRYPT_FAILED: WideString;
 	ERR_DELETE: WideString;
@@ -93,7 +91,6 @@ var
 	ERR_JSON_PARSING: WideString;
 	ERR_LINE_HASH: WideString;
 	ERR_LIST_INVITES_MSG: WideString;
-	ERR_LOAD_CAPTCHA: WideString;
 	ERR_NAME_TOO_LONG: WideString;
 	ERR_NO_MASTER_PASSWORD: WideString;
 	ERR_NO_PASSWORDS_STORED: WideString;
@@ -110,7 +107,6 @@ var
 	ERR_PUBLISH_FILE_ASK: WideString;
 	ERR_PUBLISH_MSG: WideString;
 	ERR_READ_BYTES_FROM: WideString;
-	ERR_REGISTRATION: WideString;
 	ERR_SHARE_FOLDER_MSG: WideString;
 	ERR_SOCKET_GENERAL: WideString;
 	ERR_TOKEN_UPDATE: WideString;
@@ -513,7 +509,6 @@ implementation
 procedure InitializeDefaults;
 begin
 	ACCOUNT_TRASH := '%s trash';
-	ASK_CONTINUE := 'Continue operation?';
 	ASK_ENCRYPTION_PASSWORD := '%s encryption password';
 	ASK_OVERWRITE_ACCOUNT := 'Account "%s" already exists. Overwrite it?';
 	ASK_SAVE_ACCOUNT_CHANGES := 'Save changes to account "%s"?';
@@ -565,7 +560,6 @@ begin
 	ERR_CLOUD_ERROR_UNPROCESSABLE_ENTRY := 'Cannot grant access to the file.';
 	ERR_CLOUD_ERROR_USER_LIMIT_EXCEEDED := 'Unable to add user. You can have a maximum of 200 users in one shared folder.';
 	ERR_CLOUD_ERROR_VIRUS_SCAN_FAIL := 'File is infected with a virus.';
-	ERR_CONFIRMATION := 'Confirmation error';
 	ERR_COPY_SAME_DIR_NOT_SUPPORTED := 'Copying to the same dir is not supported';
 	ERR_DECRYPT_FAILED := 'CryptProc returns an error: Decrypt failed';
 	ERR_DELETE := 'Can''t delete %s';
@@ -593,7 +587,6 @@ begin
 	ERR_JSON_PARSING := 'JSON parsing error: %s';
 	ERR_LINE_HASH := 'Line %d[%s]: %s';
 	ERR_LIST_INVITES_MSG := 'Error while retrieving file %s invites list, see the main log';
-	ERR_LOAD_CAPTCHA := 'Can''t load captcha image!';
 	ERR_NAME_TOO_LONG := 'Name too long';
 	ERR_NO_MASTER_PASSWORD := 'No master password entered yet';
 	ERR_NO_PASSWORDS_STORED := 'CryptProc returns an error: No password found in the password store';
@@ -608,7 +601,6 @@ begin
 	ERR_PUBLISH_FILE := 'File publishing error';
 	ERR_PUBLISH_MSG := 'Error while publishing file %s, see the main log';
 	ERR_READ_BYTES_FROM := 'Can''t read from %s %d bytes at %d';
-	ERR_REGISTRATION := 'Registration error';
 	ERR_SHARE_FOLDER_MSG := 'Error while share access to %s from %s folder, see the main log';
 	ERR_SOCKET_GENERAL := '%s network error: %s at %s %s';
 	ERR_TOKEN_UPDATE := 'Token update error!';
@@ -736,7 +728,7 @@ begin
 	{Compound strings - must be set AFTER their dependencies}
 	ERR_CLONE_FILE_ASK := 'File cloning error: %s' + SLineBreak + CONTINUE_ASK;
 	ERR_DOWNLOAD_FILE_ASK := 'Error downloading file' + SLineBreak + '%s' + SLineBreak + CONTINUE_ASK;
-	ERR_PARTIAL_UPLOAD_ASK := 'Partial upload error, code: %d' + SLineBreak + 'part name: %s' + SLineBreak + ASK_CONTINUE;
+	ERR_PARTIAL_UPLOAD_ASK := 'Partial upload error, code: %d' + SLineBreak + 'part name: %s' + SLineBreak + CONTINUE_ASK;
 	ERR_PUBLISH_FILE_ASK := 'File publish error: %s' + SLineBreak + CONTINUE_ASK;
 	ERR_UPLOAD_FILE_ASK := 'Error uploading file' + SLineBreak + '%s' + SLineBreak + CONTINUE_ASK;
 	ERR_WRITE_NO_MASTER_PASSWORD := '%s: password is not saved: ' + ERR_NO_MASTER_PASSWORD;
@@ -1008,7 +1000,6 @@ begin
 	TranslationRegistry := TDictionary<string, PWideString>.Create;
 
 	TranslationRegistry.Add('ACCOUNT_TRASH', @ACCOUNT_TRASH);
-	TranslationRegistry.Add('ASK_CONTINUE', @ASK_CONTINUE);
 	TranslationRegistry.Add('ASK_ENCRYPTION_PASSWORD', @ASK_ENCRYPTION_PASSWORD);
 	TranslationRegistry.Add('ASK_OVERWRITE_ACCOUNT', @ASK_OVERWRITE_ACCOUNT);
 	TranslationRegistry.Add('ASK_SAVE_ACCOUNT_CHANGES', @ASK_SAVE_ACCOUNT_CHANGES);
@@ -1061,7 +1052,6 @@ begin
 	TranslationRegistry.Add('ERR_CLOUD_ERROR_UNPROCESSABLE_ENTRY', @ERR_CLOUD_ERROR_UNPROCESSABLE_ENTRY);
 	TranslationRegistry.Add('ERR_CLOUD_ERROR_USER_LIMIT_EXCEEDED', @ERR_CLOUD_ERROR_USER_LIMIT_EXCEEDED);
 	TranslationRegistry.Add('ERR_CLOUD_ERROR_VIRUS_SCAN_FAIL', @ERR_CLOUD_ERROR_VIRUS_SCAN_FAIL);
-	TranslationRegistry.Add('ERR_CONFIRMATION', @ERR_CONFIRMATION);
 	TranslationRegistry.Add('ERR_COPY_SAME_DIR_NOT_SUPPORTED', @ERR_COPY_SAME_DIR_NOT_SUPPORTED);
 	TranslationRegistry.Add('ERR_DECRYPT_FAILED', @ERR_DECRYPT_FAILED);
 	TranslationRegistry.Add('ERR_DELETE', @ERR_DELETE);
@@ -1090,7 +1080,6 @@ begin
 	TranslationRegistry.Add('ERR_JSON_PARSING', @ERR_JSON_PARSING);
 	TranslationRegistry.Add('ERR_LINE_HASH', @ERR_LINE_HASH);
 	TranslationRegistry.Add('ERR_LIST_INVITES_MSG', @ERR_LIST_INVITES_MSG);
-	TranslationRegistry.Add('ERR_LOAD_CAPTCHA', @ERR_LOAD_CAPTCHA);
 	TranslationRegistry.Add('ERR_NAME_TOO_LONG', @ERR_NAME_TOO_LONG);
 	TranslationRegistry.Add('ERR_NO_MASTER_PASSWORD', @ERR_NO_MASTER_PASSWORD);
 	TranslationRegistry.Add('ERR_NO_PASSWORDS_STORED', @ERR_NO_PASSWORDS_STORED);
@@ -1107,7 +1096,6 @@ begin
 	TranslationRegistry.Add('ERR_PUBLISH_FILE_ASK', @ERR_PUBLISH_FILE_ASK);
 	TranslationRegistry.Add('ERR_PUBLISH_MSG', @ERR_PUBLISH_MSG);
 	TranslationRegistry.Add('ERR_READ_BYTES_FROM', @ERR_READ_BYTES_FROM);
-	TranslationRegistry.Add('ERR_REGISTRATION', @ERR_REGISTRATION);
 	TranslationRegistry.Add('ERR_SHARE_FOLDER_MSG', @ERR_SHARE_FOLDER_MSG);
 	TranslationRegistry.Add('ERR_SOCKET_GENERAL', @ERR_SOCKET_GENERAL);
 	TranslationRegistry.Add('ERR_TOKEN_UPDATE', @ERR_TOKEN_UPDATE);
