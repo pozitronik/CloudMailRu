@@ -108,7 +108,6 @@ type
 
 		{PROCEDURES}
 		function TruncateForLog(const S: WideString): WideString;
-		procedure SetCookie(const Value: TIdCookieManager);
 		procedure SetExternalSourceName(const Value: WideString);
 		procedure SetExternalTargetName(const Value: WideString);
 
@@ -122,7 +121,7 @@ type
 		{PROPERTIES}
 		HTTP: TIdHTTP;
 		Property Options: TConnectionSettings read Settings;
-		Property AuthCookie: TIdCookieManager read GetAuthCookie write SetCookie; {Managed externally for auth sharing between connections}
+		Property AuthCookie: TIdCookieManager read GetAuthCookie write SetAuthCookie; {Managed externally for auth sharing between connections}
 		property SourceName: WideString write SetExternalSourceName;
 		property TargetName: WideString write SetExternalTargetName;
 		{CONSTRUCTOR/DESTRUCTOR}
@@ -452,11 +451,6 @@ begin
 	finally
 		ResultStream.free;
 	end;
-end;
-
-procedure TCloudMailRuHTTP.SetCookie(const Value: TIdCookieManager);
-begin
-	self.HTTP.CookieManager := Value;
 end;
 
 procedure TCloudMailRuHTTP.SetExternalSourceName(const Value: WideString);
