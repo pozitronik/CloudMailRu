@@ -1,6 +1,6 @@
 unit CloudFileOperationsAdapter;
 
-{Adapter that wraps TCloudMailRu to implement ICloudFileOperations.
+{Adapter that wraps TCloudMailRu to implement ICloudFileOperationsAdapter.
 	Narrow interface used by CloudDescriptionOperationsAdapter for basic
 	cloud file operations (download, upload, delete).}
 
@@ -13,7 +13,7 @@ uses
 type
 	{Interface for basic cloud file operations.
 		Narrow interface used by CloudDescriptionOperationsAdapter.}
-	ICloudFileOperations = interface
+	ICloudFileOperationsAdapter = interface
 		['{B9C95D48-FCF9-4375-8D15-0412756191C0}']
 
 		{Download file from cloud.
@@ -36,8 +36,8 @@ type
 		function DeleteFile(Path: WideString): Boolean;
 	end;
 
-	{Wraps TCloudMailRu to implement ICloudFileOperations interface}
-	TCloudFileOperationsAdapter = class(TInterfacedObject, ICloudFileOperations)
+	{Wraps TCloudMailRu to implement ICloudFileOperationsAdapter interface}
+	TCloudFileOperationsAdapter = class(TInterfacedObject, ICloudFileOperationsAdapter)
 	private
 		FCloud: TCloudMailRu;
 	public

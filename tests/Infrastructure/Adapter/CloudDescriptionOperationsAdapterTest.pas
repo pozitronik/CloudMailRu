@@ -12,8 +12,8 @@ uses
 	DUnitX.TestFramework;
 
 type
-	{Mock implementation of ICloudFileOperations for testing}
-	TMockCloudFileOps = class(TInterfacedObject, ICloudFileOperations)
+	{Mock implementation of ICloudFileOperationsAdapter for testing}
+	TMockCloudFileOps = class(TInterfacedObject, ICloudFileOperationsAdapter)
 	private
 		FGetFileResult: Integer;
 		FPutFileResult: Integer;
@@ -35,7 +35,7 @@ type
 		procedure SetPutFileResult(Result: Integer);
 		procedure SetDeleteFileResult(Result: Boolean);
 
-		{ICloudFileOperations implementation}
+		{ICloudFileOperationsAdapter implementation}
 		function GetFile(RemotePath, LocalPath: WideString; var ResultHash: WideString;
 			LogErrors: Boolean = True): Integer;
 		function PutFile(LocalPath, RemotePath: WideString): Integer;
@@ -58,7 +58,7 @@ type
 	private
 		FAdapter: TCloudDescriptionOperationsAdapter;
 		FMockCloudOps: TMockCloudFileOps;
-		FMockCloudOpsRef: ICloudFileOperations;
+		FMockCloudOpsRef: ICloudFileOperationsAdapter;
 		FMockFileSystem: TMemoryFileSystem;
 		FMockFileSystemRef: IFileSystem;
 	public

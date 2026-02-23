@@ -41,11 +41,11 @@ type
 	{Wraps cloud operations to ICloudDescriptionOps interface}
 	TCloudDescriptionOperationsAdapter = class(TInterfacedObject, ICloudDescriptionOps)
 	private
-		FCloudOps: ICloudFileOperations;
+		FCloudOps: ICloudFileOperationsAdapter;
 		FFileSystem: IFileSystem;
 	public
 		{Create adapter with injected dependencies}
-		constructor Create(CloudOps: ICloudFileOperations; FileSystem: IFileSystem); overload;
+		constructor Create(CloudOps: ICloudFileOperationsAdapter; FileSystem: IFileSystem); overload;
 
 		{Convenience constructor wrapping TCloudMailRu directly}
 		constructor Create(Cloud: TCloudMailRu); overload;
@@ -59,7 +59,7 @@ implementation
 
 {TCloudDescriptionOperationsAdapter}
 
-constructor TCloudDescriptionOperationsAdapter.Create(CloudOps: ICloudFileOperations; FileSystem: IFileSystem);
+constructor TCloudDescriptionOperationsAdapter.Create(CloudOps: ICloudFileOperationsAdapter; FileSystem: IFileSystem);
 begin
 	inherited Create;
 	FCloudOps := CloudOps;

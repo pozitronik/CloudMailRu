@@ -15,21 +15,21 @@ type
 	public
 		{ Interface implementation test }
 		[Test]
-		procedure TestImplementsICloudFileOperations;
+		procedure TestImplementsICloudFileOperationsAdapter;
 	end;
 
 implementation
 
 { TCloudFileOperationsAdapterTest }
 
-procedure TCloudFileOperationsAdapterTest.TestImplementsICloudFileOperations;
+procedure TCloudFileOperationsAdapterTest.TestImplementsICloudFileOperationsAdapter;
 var
-	Adapter: ICloudFileOperations;
+	Adapter: ICloudFileOperationsAdapter;
 begin
 	{Cannot test actual delegation without TCloudMailRu instance,
 	 but we can verify interface implementation}
 	Adapter := TCloudFileOperationsAdapter.Create(nil);
-	Assert.IsNotNull(Adapter, 'Should implement ICloudFileOperations interface');
+	Assert.IsNotNull(Adapter, 'Should implement ICloudFileOperationsAdapter interface');
 end;
 
 initialization
