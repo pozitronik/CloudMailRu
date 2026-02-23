@@ -95,7 +95,7 @@ type
 		FDoCryptFiles: Boolean;
 		FCookieBasedAuth: Boolean; {True when using VK ID cookie-based authentication}
 		FPublicLink: WideString; {Holder for GetPublicLink() value - protected for testability}
-		FUnitedParams: WideString; {The set of required authentification attributes united to the string}
+		FUnitedParams: WideString; {The set of required authentication attributes united to the string}
 
 		{Protected for testability}
 		FShardManager: ICloudShardManager; {Shard URL caching and management}
