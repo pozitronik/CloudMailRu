@@ -39,6 +39,8 @@ const
 	TYPE_FILE = 'file';
 
 	KIND_SHARED = 'shared';
+	CLOUD_STATUS_OK = 200; {Cloud API success status}
+
 	{Error codes returned when parsing cloud responses. Extended as new errors are discovered}
 	CLOUD_ERROR_TOKEN_OUTDATED = -3; {Token expired (custom code)}
 	CLOUD_ERROR_UNKNOWN = -2; {unknown: server error}

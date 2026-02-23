@@ -82,7 +82,7 @@ begin
 		OperationResult.OperationStatus := Root.Get(NAME_STATUS).AsInt;
 
 		{Success}
-		if OperationResult.OperationStatus = 200 then
+		if OperationResult.OperationStatus = CLOUD_STATUS_OK then
 		begin
 			OperationResult.OperationResult := CLOUD_OPERATION_OK;
 			Exit;
@@ -90,17 +90,17 @@ begin
 
 		{HTTP status codes with defined meanings}
 		case OperationResult.OperationStatus of
-			451:
+			CLOUD_ERROR_FAHRENHEIT:
 				begin
 					OperationResult.OperationResult := CLOUD_ERROR_FAHRENHEIT;
 					Exit;
 				end;
-			507:
+			HTTP_ERROR_OVERQUOTA:
 				begin
 					OperationResult.OperationResult := CLOUD_ERROR_OVERQUOTA;
 					Exit;
 				end;
-			406:
+			CLOUD_ERROR_NOT_ACCEPTABLE:
 				begin
 					OperationResult.OperationResult := CLOUD_ERROR_NOT_ACCEPTABLE;
 					Exit;
@@ -148,12 +148,12 @@ begin
 		OperationResult.OperationStatus := Root.Get(NAME_STATUS).AsInt;
 
 		case OperationResult.OperationStatus of
-			200:
+			CLOUD_STATUS_OK:
 				begin
 					OperationResult.OperationResult := CLOUD_OPERATION_OK;
 					Result := True;
 				end;
-			400:
+			CLOUD_ERROR_BAD_REQUEST:
 				OperationResult.OperationResult := CLOUD_ERROR_BAD_REQUEST;
 		else
 			OperationResult.OperationResult := CLOUD_ERROR_UNKNOWN;

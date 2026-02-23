@@ -18,6 +18,7 @@ const
 	{Password manager key constants}
 	PASSWORD_SUFFIX_FILECRYPT = ' filecrypt'; {Suffix for file encryption password keys}
 	PASSWORD_KEY_PROXY = 'proxy'; {Key prefix for proxy passwords}
+	PASSWORD_BUFFER_SIZE = 1024; {Buffer size for TC CryptProc password exchange}
 
 type
 	IPasswordManager = interface
@@ -86,14 +87,14 @@ function TTCPasswordManager.GetPassword(Key: WideString; var Password: WideStrin
 var
 	buf: PWideChar;
 begin
-	GetMem(buf, 1024);
-	ZeroMemory(buf, 1024);
-	Result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(Key), buf, 1024);
+	GetMem(buf, PASSWORD_BUFFER_SIZE);
+	ZeroMemory(buf, PASSWORD_BUFFER_SIZE);
+	Result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD_NO_UI, PWideChar(Key), buf, PASSWORD_BUFFER_SIZE);
 	if FS_FILE_NOTFOUND = Result then
 	begin
 		Logger.Log(LOG_LEVEL_DETAIL, MSGTYPE_DETAILS, ERR_NO_MASTER_PASSWORD);
-		ZeroMemory(buf, 1024);
-		Result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(Key), buf, 1024);
+		ZeroMemory(buf, PASSWORD_BUFFER_SIZE);
+		Result := self.CryptProc(PluginNum, CryptoNum, FS_CRYPT_LOAD_PASSWORD, PWideChar(Key), buf, PASSWORD_BUFFER_SIZE);
 	end;
 	if FS_FILE_OK = Result then
 	begin
@@ -107,7 +108,7 @@ begin
 	begin
 		Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_DECRYPT_FAILED);
 	end;
-	ZeroMemory(buf, 1024);
+	ZeroMemory(buf, PASSWORD_BUFFER_SIZE);
 	FreeMemory(buf);
 end;
 
