@@ -301,7 +301,7 @@ begin
 		Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE, [URL, HTTP.ResponseCode, Length(Answer)]);
 		Logger.Log(LOG_LEVEL_HTTP, MSGTYPE_DETAILS, HTTP_RESPONSE_BODY, [TruncateForLog(Answer)]);
 		Result := Answer <> EmptyWideStr;
-	Except
+	except
 		on E: Exception do
 		begin
 			case self.ExceptionHandler(E, URL) of
@@ -369,7 +369,7 @@ begin
 		HTTP.OnWork := self.HTTPProgress;
 		HTTP.Post(URL, PostData, ResultData);
 	except
-		On E: Exception do
+		on E: Exception do
 		begin
 			Result := self.ExceptionHandler(E, URL);
 		end;
@@ -430,7 +430,7 @@ begin
 		ResultData.WriteString(PutAnswer);
 
 	except
-		On E: Exception do
+		on E: Exception do
 		begin
 			Result := self.ExceptionHandler(E, URL, HTTP_METHOD_PUT);
 		end;
