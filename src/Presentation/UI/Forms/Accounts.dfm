@@ -25,7 +25,7 @@ object AccountsForm: TAccountsForm
     Align = alClient
     TabOrder = 0
     ExplicitWidth = 703
-    ExplicitHeight = 479
+    ExplicitHeight = 532
     object AccountsTab: TTabSheet
       Caption = 'Accounts'
       ImageIndex = 5
@@ -57,7 +57,7 @@ object AccountsForm: TAccountsForm
         ShowCaption = False
         TabOrder = 9
         ExplicitWidth = 419
-        ExplicitHeight = 45
+        ExplicitHeight = 98
         DesignSize = (
           425
           115)
@@ -105,6 +105,7 @@ object AccountsForm: TAccountsForm
         BevelOuter = bvNone
         ShowCaption = False
         TabOrder = 7
+        ExplicitWidth = 419
         DesignSize = (
           425
           346)
@@ -195,7 +196,7 @@ object AccountsForm: TAccountsForm
           Align = alBottom
           Caption = 'File size'
           TabOrder = 4
-          ExplicitTop = 144
+          ExplicitWidth = 419
           DesignSize = (
             425
             68)
@@ -252,7 +253,7 @@ object AccountsForm: TAccountsForm
           Align = alBottom
           Caption = 'Encryption'
           TabOrder = 5
-          ExplicitTop = 212
+          ExplicitWidth = 419
           DesignSize = (
             425
             127)
@@ -360,7 +361,6 @@ object AccountsForm: TAccountsForm
         ViewStyle = vsReport
         OnKeyUp = AccountsListViewKeyUp
         OnSelectItem = AccountsListViewSelectItem
-        ExplicitHeight = 430
       end
       object AddButton: TButton
         Left = 4
@@ -371,7 +371,7 @@ object AccountsForm: TAccountsForm
         Caption = 'New'
         TabOrder = 1
         OnClick = AddButtonClick
-        ExplicitTop = 422
+        ExplicitTop = 475
       end
       object DeleteButton: TButton
         Left = 141
@@ -382,7 +382,7 @@ object AccountsForm: TAccountsForm
         Caption = 'Delete'
         TabOrder = 2
         OnClick = DeleteButtonClick
-        ExplicitTop = 422
+        ExplicitTop = 475
       end
       object AccountNameEdit: TEdit
         Left = 272
@@ -459,7 +459,7 @@ object AccountsForm: TAccountsForm
         TabOrder = 8
         OnClick = ApplyButtonClick
         ExplicitLeft = 567
-        ExplicitTop = 422
+        ExplicitTop = 475
       end
     end
     object GlobalTab: TTabSheet
@@ -567,7 +567,6 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 13
         OnClick = GlobalSettingsApplyBtnClick
-        ExplicitTop = 476
       end
       object ChunkOverwriteModeCombo: TComboBox
         Left = 237
@@ -731,9 +730,9 @@ object AccountsForm: TAccountsForm
           'Via public link')
       end
       object PrecalculateHashStrategyCombo: TComboBox
-        Left = 238
+        Left = 237
         Top = 220
-        Width = 463
+        Width = 464
         Height = 21
         Style = csDropDownList
         Anchors = [akLeft, akTop, akRight]
@@ -917,7 +916,6 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 6
         OnClick = GlobalSettingsApplyBtnClick
-        ExplicitTop = 476
       end
       object SpeedLimitGB: TGroupBox
         Left = 0
@@ -1081,7 +1079,6 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 0
         OnClick = GlobalSettingsApplyBtnClick
-        ExplicitTop = 476
       end
       object FileCommentsCB: TGroupBox
         Left = 0
@@ -1403,7 +1400,6 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 9
         OnClick = ApplyExtButtonClick
-        ExplicitTop = 476
       end
       object NewExtButton: TButton
         Left = 4
@@ -1414,7 +1410,6 @@ object AccountsForm: TAccountsForm
         Caption = 'New'
         TabOrder = 1
         OnClick = NewExtButtonClick
-        ExplicitTop = 476
       end
       object DeleteExtButton: TButton
         Left = 141
@@ -1425,7 +1420,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Delete'
         TabOrder = 2
         OnClick = DeleteExtButtonClick
-        ExplicitTop = 476
       end
       object StreamingExtensionsListView: TListView
         Left = 4
@@ -1448,7 +1442,6 @@ object AccountsForm: TAccountsForm
         ViewStyle = vsReport
         OnKeyUp = StreamingExtensionsListViewKeyUp
         OnSelectItem = StreamingExtensionsListViewSelectItem
-        ExplicitHeight = 467
       end
     end
     object CacheTab: TTabSheet
@@ -1467,7 +1460,6 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 0
         OnClick = GlobalSettingsApplyBtnClick
-        ExplicitTop = 476
       end
       object CacheDirGB: TGroupBox
         Left = 0
@@ -1737,7 +1729,6 @@ object AccountsForm: TAccountsForm
         ViewStyle = vsReport
         OnKeyUp = ServersListViewKeyUp
         OnSelectItem = ServersListViewSelectItem
-        ExplicitHeight = 467
       end
       object ServerNameEdit: TEdit
         Left = 272
@@ -1776,7 +1767,6 @@ object AccountsForm: TAccountsForm
         Caption = 'New'
         TabOrder = 1
         OnClick = AddServerButtonClick
-        ExplicitTop = 476
       end
       object DeleteServerButton: TButton
         Left = 141
@@ -1787,7 +1777,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Delete'
         TabOrder = 2
         OnClick = DeleteServerButtonClick
-        ExplicitTop = 476
       end
       object ApplyServerButton: TButton
         Left = 573
@@ -1799,7 +1788,6 @@ object AccountsForm: TAccountsForm
         Enabled = False
         TabOrder = 6
         OnClick = ApplyServerButtonClick
-        ExplicitTop = 476
       end
       object ServerParametersGB: TGroupBox
         Left = 272
@@ -1962,7 +1950,6 @@ object AccountsForm: TAccountsForm
         Anchors = [akLeft, akTop, akRight, akBottom]
         ItemHeight = 13
         TabOrder = 0
-        ExplicitHeight = 444
       end
       object ApplyTranslationBtn: TButton
         Left = 573
@@ -1973,7 +1960,6 @@ object AccountsForm: TAccountsForm
         Caption = 'Apply'
         TabOrder = 1
         OnClick = ApplyTranslationBtnClick
-        ExplicitTop = 476
       end
     end
   end

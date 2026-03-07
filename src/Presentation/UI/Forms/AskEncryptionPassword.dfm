@@ -24,39 +24,43 @@ object AskEncryptionPasswordForm: TAskEncryptionPasswordForm
   object PasswordEditLabel: TLabel
     Left = 7
     Top = 8
-    Width = 420
+    Width = 414
     Height = 40
     Anchors = [akLeft, akTop, akRight]
     AutoSize = False
     Caption = 'Enter encryption password for current session:'
     WordWrap = True
+    ExplicitWidth = 420
   end
   object PasswordEdit: TEdit
     Left = 7
     Top = 27
-    Width = 420
+    Width = 414
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     PasswordChar = '*'
     TabOrder = 0
     OnChange = PasswordEditChange
+    ExplicitWidth = 408
   end
   object OkButton: TButton
     Left = 352
     Top = 54
-    Width = 75
+    Width = 69
     Height = 25
     Anchors = [akLeft, akTop, akRight]
     Caption = 'OK'
     Enabled = False
     ModalResult = 1
     TabOrder = 1
+    ExplicitWidth = 63
   end
   object SkipButton: TButton
     Left = 7
     Top = 54
     Width = 168
     Height = 25
+    Cancel = True
     Caption = 'No encryption this time'
     ModalResult = 7
     TabOrder = 2
