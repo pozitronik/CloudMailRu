@@ -1,6 +1,6 @@
 unit CipherProfile;
 
-{Cipher profile registry -- maps profile IDs to backend-agnostic cipher factories.
+{Cipher profile registry - maps profile IDs to backend-agnostic cipher factories.
 	Each profile defines a complete encryption configuration.
 	Supports DCPCrypt, OpenSSL, and BCrypt backends via factory closures.}
 
@@ -103,7 +103,7 @@ begin
 	{Dynamic index for conditional backends}
 	NextIndex := 3;
 
-	{OpenSSL backend -- only registered when cipher functions are available}
+	{OpenSSL backend - only registered when cipher functions are available}
 	if HasOpenSSL then
 	begin
 		CapturedFunctions := OpenSSLProvider.GetFunctions;
@@ -118,7 +118,7 @@ begin
 		Inc(NextIndex);
 	end;
 
-	{BCrypt backend -- available on Windows Vista+ via bcrypt.dll}
+	{BCrypt backend - available on Windows Vista+ via bcrypt.dll}
 	if HasBCrypt then
 	begin
 		CapturedBCryptProvider := BCryptProvider;

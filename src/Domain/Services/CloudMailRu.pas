@@ -554,7 +554,7 @@ begin
 	FAuthorizationError := TAuthorizationError.Empty;
 
 	{For non-public accounts, retrieve password via provider before login.
-		VK ID mode does not need a stored password -- the user enters credentials in the browser.}
+		VK ID mode does not need a stored password - the user enters credentials in the browser.}
 	if (not IsPublicAccount) and (FSettings.AccountSettings.AuthMethod <> CLOUD_AUTH_METHOD_VKID) then
 	begin
 		if not FAccountCredentialsProvider.GetPassword(FSettings.AccountSettings.Account, FSettings.AccountSettings) then

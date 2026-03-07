@@ -72,13 +72,13 @@ begin
 	Result := TCloudDirItem.None;
 
 	{If not found (e.g. pressed Space on a folder), query cloud directly}
-	if Path.trashDir then {Trash -- refresh listing, search there}
+	if Path.trashDir then {Trash - refresh listing, search there}
 	begin
 		if Cloud.ListingService.GetTrashbin(Listing) then
 			Exit(Listing.FindByName(Path.Path));
 	end;
 
-	if Path.sharedDir then {Shared links -- refresh listing}
+	if Path.sharedDir then {Shared links - refresh listing}
 	begin
 		if Cloud.ListingService.GetSharedLinks(Listing) then
 			Exit(Listing.FindByName(Path.Path));

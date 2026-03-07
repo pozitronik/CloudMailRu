@@ -24,7 +24,7 @@ uses
 
 const
 	{Posted from NavigationCompleted to run cookie/CSRF extraction outside
-		the WebView2 callback chain -- ExecuteScript callbacks are not dispatched
+		the WebView2 callback chain - ExecuteScript callbacks are not dispatched
 		while a NavigationCompleted handler is still on the stack.}
 	WM_FINALIZE_LOGIN = WM_USER + 1;
 
@@ -245,7 +245,7 @@ begin
 	if not IsSuccess then
 		Exit;
 
-	{Phase 3: cloud.mail.ru loaded -- defer cookie/CSRF extraction via PostMessage.
+	{Phase 3: cloud.mail.ru loaded - defer cookie/CSRF extraction via PostMessage.
 		We cannot call ExecuteScript with a blocking wait here because WebView2
 		does not dispatch script completion callbacks while NavigationCompleted
 		is still on the call stack. PostMessage ensures we run outside the callback.}
@@ -270,7 +270,7 @@ begin
 		Exit;
 	end;
 
-	{Phase 2: detect successful login -- navigated away from auth pages to any mail.ru service.
+	{Phase 2: detect successful login - navigated away from auth pages to any mail.ru service.
 		After login, user lands on e.mail.ru (inbox). Now navigate to cloud.mail.ru
 		so that SDC cookies are set (they require JavaScript execution in the browser).}
 	if (Pos('.mail.ru', CurrentURL) > 0)
@@ -333,7 +333,7 @@ begin
 		Exit;
 	end;
 
-	{Pump messages while waiting -- same pattern as ExtractCookies.
+	{Pump messages while waiting - same pattern as ExtractCookies.
 		Use Int64 arithmetic to avoid unsigned overflow with $Q+ in debug builds.}
 	Deadline := Int64(GetTickCount) + 10000;
 	repeat

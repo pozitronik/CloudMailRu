@@ -25,7 +25,7 @@ type
 	BCRYPT_KEY_HANDLE = THandle;
 	BCRYPT_HASH_HANDLE = THandle;
 
-	{Interface for BCrypt operations -- allows DI and testability}
+	{Interface for BCrypt operations - allows DI and testability}
 	IBCryptProvider = interface
 		['{F7A1B2C3-D4E5-6789-ABCD-EF0123456789}']
 		function IsAvailable: Boolean;
@@ -35,7 +35,7 @@ type
 		procedure DestroyKeyHandle(KeyHandle: BCRYPT_KEY_HANDLE);
 	end;
 
-	{Production BCrypt provider -- loads bcrypt.dll and resolves functions}
+	{Production BCrypt provider - loads bcrypt.dll and resolves functions}
 	TBCryptProvider = class(TInterfacedObject, IBCryptProvider)
 	private
 		FHandle: THandle;

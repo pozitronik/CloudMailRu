@@ -104,7 +104,7 @@ begin
 	end
 	else
 	begin
-		{Resolve cipher profile -- empty or unknown falls back to legacy default}
+		{Resolve cipher profile - empty or unknown falls back to legacy default}
 		if not TCipherProfileRegistry.FindById(CloudSettings.AccountSettings.CipherProfileId, Profile) then
 			Profile := TCipherProfileRegistry.GetDefaultProfile;
 

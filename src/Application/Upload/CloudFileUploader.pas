@@ -230,7 +230,7 @@ begin
 
 	if KnownHash <> EmptyWideStr then
 	begin
-		{Hash already known from caller (e.g. cross-server transfer) -- skip
+		{Hash already known from caller (e.g. cross-server transfer) - skip
 			expensive recalculation and redundant dedup attempt}
 		LocalFileIdentity.Hash := KnownHash;
 		LocalFileIdentity.size := FileStream.size;

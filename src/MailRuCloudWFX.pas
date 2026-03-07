@@ -626,7 +626,7 @@ begin
 		Cloud := ConnectionManager.Get(RealPath.account);
 		if not EnsureAuthorized(Cloud) then
 			exit(FS_EXEC_ERROR);
-		{Always refresh status from server -- CurrentListing may have been changed in another panel}
+		{Always refresh status from server - CurrentListing may have been changed in another panel}
 		if (Cloud.ListingService.StatusFile(RealPath.Path, CurrentItem)) and (idContinue = TPropertyForm.ShowProperty(MainWin, RealPath.Path, CurrentItem, Cloud, FFileSystem, FTCHandler, SettingsManager.GetSettings.DescriptionEnabled, SettingsManager.GetSettings.DescriptionEditorEnabled, SettingsManager.GetSettings.DescriptionFileName, SettingsManager.GetSettings.FileHistoryEnabled)) then
 			PostMessage(MainWin, WM_USER + TC_REFRESH_MESSAGE, TC_REFRESH_PARAM, 0); {Refresh TC panel if description was edited}
 	end;
@@ -945,7 +945,7 @@ begin
 	end else begin {Regular path listing}
 		if FDirectoryCache.TryGet(GlobalPath, CurrentListing) then
 		begin
-			{Cache hit -- apply metadata filtering on the copy and build result manually}
+			{Cache hit - apply metadata filtering on the copy and build result manually}
 			FilterHiddenMetadataFiles(CurrentListing);
 			CurrentIncomingInvitesListing := nil;
 			if Length(CurrentListing) = 0 then
@@ -961,7 +961,7 @@ begin
 				BaseResult.ErrorCode := 0;
 			end;
 		end else begin
-			{Cache miss -- fetch from server}
+			{Cache miss - fetch from server}
 			PathResult := FPathListingHandler.Execute(GlobalPath);
 			CurrentListing := PathResult.Listing;
 			CurrentIncomingInvitesListing := PathResult.IncomingInvites;

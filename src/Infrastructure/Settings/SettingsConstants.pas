@@ -54,7 +54,7 @@ const
 	INI_DIR_APPDATA = 1; {Use INI files only from %AppData%}
 	INI_DIR_AUTO = 2; {Plugin dir if writeable, else %AppData%}
 
-	CryptPasswordStorageNone = 0;       {Don't save -- ask each session}
+	CryptPasswordStorageNone = 0;       {Don't save - ask each session}
 	CryptPasswordStorageTCPwdMngr = 1;  {TC Password Manager}
 	CryptPasswordStorageIniFile = 2;    {INI file (plaintext)}
 

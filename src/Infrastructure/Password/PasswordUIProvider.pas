@@ -20,7 +20,7 @@ type
 
 		{Prompts user for an encryption password with explicit skip option.
 			Returns mrOk when password entered, mrNo when user chose to skip encryption.
-			Dialog has no close button (X) -- user must make an explicit choice.
+			Dialog has no close button (X) - user must make an explicit choice.
 			Password is modified only on mrOk result.}
 		function AskEncryptionPassword(Title, Text: WideString; var Password: WideString; ParentWindow: HWND): Integer;
 

@@ -48,7 +48,7 @@ type
 		class function InferEndpointsFromServerUrl(const ServerUrl: WideString): TCloudEndpoints; static;
 	end;
 
-	{Null implementation for testing -- always returns defaults}
+	{Null implementation for testing - always returns defaults}
 	TNullServerProfileManager = class(TInterfacedObject, IServerProfileManager)
 	public
 		function GetProfileNames: TWSList;
@@ -115,7 +115,7 @@ begin
 	Result.Name := Name;
 	Result.ServerUrl := FConfigFile.ReadString(Section, 'server_url', '');
 
-	{Read endpoint overrides -- start from defaults, then apply stored values}
+	{Read endpoint overrides - start from defaults, then apply stored values}
 	Result.Endpoints := TCloudEndpoints.CreateDefaults;
 
 	{If server_url is set, infer base defaults from it first}

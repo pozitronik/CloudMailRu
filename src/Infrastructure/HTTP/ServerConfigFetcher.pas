@@ -18,13 +18,13 @@ type
 		function Fetch(const ServerUrl: WideString; var Endpoints: TCloudEndpoints; var ErrorMsg: WideString): Boolean;
 	end;
 
-	{Production implementation -- HTTP GET to server root, fallback to URL inference}
+	{Production implementation - HTTP GET to server root, fallback to URL inference}
 	TServerConfigFetcher = class(TInterfacedObject, IServerConfigFetcher)
 	public
 		function Fetch(const ServerUrl: WideString; var Endpoints: TCloudEndpoints; var ErrorMsg: WideString): Boolean;
 	end;
 
-	{Null implementation for testing -- always fails}
+	{Null implementation for testing - always fails}
 	TNullServerConfigFetcher = class(TInterfacedObject, IServerConfigFetcher)
 	public
 		function Fetch(const ServerUrl: WideString; var Endpoints: TCloudEndpoints; var ErrorMsg: WideString): Boolean;

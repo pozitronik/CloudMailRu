@@ -163,7 +163,7 @@ begin
 
 		if not CallResult.Success then
 		begin
-			{First page failed -- return failure; subsequent page failed -- return what we have}
+			{First page failed - return failure; subsequent page failed - return what we have}
 			Result := Length(Listing) > 0;
 			Exit;
 		end;

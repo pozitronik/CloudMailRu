@@ -90,7 +90,7 @@ begin
 	FileIdentity.Size := CurrentItem.size;
 	TargetPath := IncludeTrailingPathDelimiter(ExtractFileDir(NewRealPath.Path)) + ExtractFileName(NewRealPath.Path);
 
-	{Try hash dedup first -- free instant transfer if content exists on destination}
+	{Try hash dedup first - free instant transfer if content exists on destination}
 	Result := NewCloud.Uploader.AddFileByIdentity(FileIdentity, TargetPath, CLOUD_CONFLICT_STRICT, False);
 	if Result in [FS_FILE_OK, FS_FILE_EXISTS] then
 	begin
@@ -100,7 +100,7 @@ begin
 		Exit;
 	end;
 
-	{Hash dedup failed -- download to memory, upload from memory}
+	{Hash dedup failed - download to memory, upload from memory}
 	MemoryStream := TMemoryStream.Create;
 	try
 		Result := OldCloud.Downloader.DownloadToStream(OldRealPath.Path, MemoryStream, OldRealPath.ToPath, NewRealPath.ToPath);

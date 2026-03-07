@@ -77,11 +77,11 @@ begin
 
 	TrimmedLine := Trim(Line);
 	if (TrimmedLine = '') or (TrimmedLine[1] = '#') then
-		Exit; {Comment or empty line -- not an error, just skip}
+		Exit; {Comment or empty line - not an error, just skip}
 
 	EqPos := Pos('=', TrimmedLine);
 	if EqPos < 2 then
-		Exit; {No '=' or starts with '=' -- malformed}
+		Exit; {No '=' or starts with '=' - malformed}
 
 	Key := Trim(Copy(TrimmedLine, 1, EqPos - 1));
 	RawValue := Trim(Copy(TrimmedLine, EqPos + 1, MaxInt));

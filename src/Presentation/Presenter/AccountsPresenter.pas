@@ -1464,7 +1464,7 @@ begin
 		begin
 			if not FView.ShowCipherChangeWarning then
 			begin
-				{User cancelled -- revert to previous selection}
+				{User cancelled - revert to previous selection}
 				FUpdating := True;
 				try
 					FView.SetCipherProfileIndex(FPreviousCipherProfileIndex);
@@ -1495,7 +1495,7 @@ begin
 	end;
 end;
 
-{Streaming dirty-tracking block -- mirrors the Accounts block above.
+{Streaming dirty-tracking block - mirrors the Accounts block above.
  See comment there for why the duplication is intentional.}
 procedure TAccountsPresenter.SetStreamingDirty(Value: Boolean);
 begin
@@ -1990,7 +1990,7 @@ begin
 		Exit;
 	end;
 
-	{Server responded -- populate endpoint fields}
+	{Server responded - populate endpoint fields}
 	FServerUpdating := True;
 	try
 		FView.SetServerApiUrl(Endpoints.ApiBase);

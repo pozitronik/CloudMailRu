@@ -527,7 +527,7 @@ begin
 	if E is EAbort then
 	begin
 		Result := CLOUD_OPERATION_CANCELLED;
-	end else if LogErrors then {Further error analysis only makes sense for logging -- return value is already determined}
+	end else if LogErrors then {Further error analysis only makes sense for logging - return value is already determined}
 	begin
 		if E is EIdHTTPProtocolException then
 			Logger.Log(LOG_LEVEL_ERROR, MSGTYPE_IMPORTANTERROR, ERR_HTTP_GENERAL, [E.ClassName, E.Message, method_string, URL, (E as EIdHTTPProtocolException).ErrorMessage])

@@ -246,7 +246,7 @@ begin
 		Assigned(FFunctions.EVP_DigestUpdate) and
 		Assigned(FFunctions.EVP_DigestFinal_ex);
 
-	{Resolve cipher functions -- separate flag so hash-only usage is unaffected}
+	{Resolve cipher functions - separate flag so hash-only usage is unaffected}
 	@FFunctions.EVP_CIPHER_CTX_new := GetProcAddress(FHandle, 'EVP_CIPHER_CTX_new');
 	@FFunctions.EVP_CIPHER_CTX_free := GetProcAddress(FHandle, 'EVP_CIPHER_CTX_free');
 	@FFunctions.EVP_aes_256_cfb8 := GetProcAddress(FHandle, 'EVP_aes_256_cfb8');

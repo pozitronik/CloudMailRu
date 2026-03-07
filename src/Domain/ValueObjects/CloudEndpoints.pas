@@ -17,7 +17,7 @@ type
 		DownloadUrl: WideString; {Empty = use dispatcher}
 		UploadUrl: WideString; {Empty = use dispatcher}
 
-		{Computed API v2 endpoints -- all derived from ApiBase}
+		{Computed API v2 endpoints - all derived from ApiBase}
 		function ApiCsrf: WideString;
 		function ApiFile: WideString;
 		function ApiFileMove: WideString;

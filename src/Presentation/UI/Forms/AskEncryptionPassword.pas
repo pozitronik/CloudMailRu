@@ -117,7 +117,7 @@ begin
 	end;
 end;
 
-{Prevent closing via Alt+F4 -- only allow close through button clicks}
+{Prevent closing via Alt+F4 - only allow close through button clicks}
 procedure TAskEncryptionPasswordForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
 	CanClose := (ModalResult <> mrNone);

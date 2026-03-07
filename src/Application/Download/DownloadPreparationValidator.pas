@@ -69,7 +69,7 @@ begin
 	if RemotePath.isVirtual then
 		Exit;
 
-	{Skip metadata files when copy is disabled -- silent skip via FS_FILE_OK}
+	{Skip metadata files when copy is disabled - silent skip via FS_FILE_OK}
 	Settings := FSettingsManager.GetSettings;
 	FileName := ExtractFileName(RemotePath.Path);
 	if Settings.SkipDescriptionDownload and SameText(FileName, Settings.DescriptionFileName) then
